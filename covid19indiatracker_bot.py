@@ -108,6 +108,11 @@ def _getStatewiseStats(stateName):
     message = message + '```'
     return message
 
+def _initStateCodes(filename):
+    global _stateNameCodeDict
+    with open(filename, 'r') as scFile:
+        _stateNameCodeDict = json.load(scFile)
+
 def start(update, context):
     """ start command """
     logging.info('Command invoked: start')
@@ -122,10 +127,18 @@ def help(update, context):
               "/statecodes - Displays codes of states that can be used as <state>"
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
-def _initStateCodes(filename):
+def statecodes(update, context):
+    """ Displays state codes """
+    logging.info('Command invoked: statecodes')
     global _stateNameCodeDict
-    with open(filename, 'r') as scFile:
-        _stateNameCodeDict = json.load(scFile)
+    message = ''
+    for stateName in _stateNameCodeDict:
+        if len(stateName) == 2:
+            message = message + stateName + ': ' +  _stateNameCodeDict[stateName] + '\n'
+    message = webPageLink + '```\n' + message + '```'
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
+                            parse_mode=ParseMode.MARKDOWN, \
+                            disable_web_page_preview=True)
 
 def covid19india(update, context):
     """ Main command that retrieves and sends data """
@@ -153,6 +166,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(CommandHandler('help', help))
     updater.dispatcher.add_handler(CommandHandler('covid19india', covid19india))
+    updater.dispatcher.add_handler(CommandHandler('statecodes', statecodes))
 
     updater.start_polling()
     updater.idle()
