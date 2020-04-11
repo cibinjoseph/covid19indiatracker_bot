@@ -67,7 +67,7 @@ def _getNationalStats():
     chars = 5  # Character spacing per column
     message = webPageLink + '\n' + \
             '*Active*| *Recovered* ' +\
-            '*Deceased* | *Total* ```\n'
+            '*Deceased* | *Total* ``` \n'
     for state in orderedData:
         stateName = state[0]
         # Find rest of the values from dataset
@@ -97,7 +97,7 @@ def _getStatewiseStats(stateName):
     for stateDict in data:
         if stateName == stateDict['state']:
             message = webPageLink + '\n' +  \
-                    '*District* | *Total Confirmed* ```\n'
+                    '*District* | *Total Confirmed* ``` \n'
             for district in stateDict['districtData']:
                 districtName = district['district']
                 confirmed = str(district['confirmed']).ljust(chars, ' ')
