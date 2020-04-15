@@ -2,21 +2,23 @@
 from sys import version_info
 if version_info.major > 2:
     raise Exception('This code does not work with Python 3. Use Python 2')
-import json, requests
-import logging
-from telegram.ext import Updater, CommandHandler
-from telegram import ParseMode
+import requests
+import json
 import operator
+from telegram import ParseMode
+from telegram.ext import Updater, CommandHandler
+import logging
 
 # Bot details
 _tokenFile = 'TOKEN'
-logging.basicConfig(filename='covid19indiatracker_bot.log', \
+logging.basicConfig(filename='covid19indiatracker_bot.log',
                     format='%(asctime)s - %(name)s - \
-                    %(levelname)s - %(message)s', \
+                    %(levelname)s - %(message)s',
                     level=logging.INFO)
 webPageLink = 'https://www.covid19india.org'
 MOHFWLink = "https://www.mohfw.gov.in/dashboard/data/data.json"
 _stateNameCodeDict = {}
+
 
 def _getSiteData(statewise=False):
     """ Retrieves data from api link """
@@ -32,6 +34,7 @@ def _getSiteData(statewise=False):
         logging.info('Stats retrieval: FAILED')
         return None
 
+
 def _getMOHFWData():
     """ Retrieves data from MOHFW site """
     logging.info('Command invoked: covid19india')
@@ -44,6 +47,7 @@ def _getMOHFWData():
         logging.info('Stats retrieval: FAILED')
         return None
 
+
 def _readToken(filename):
     """ Read secret Bot TOKEN from file """
     with open(filename, 'r') as f:
@@ -53,6 +57,7 @@ def _readToken(filename):
     else:
         return TOKEN
 
+
 def _getSortedStatewise(data):
     """ Returns ordered statewise data on the basis of max confirmed"""
     stateConfirmed = {}
@@ -61,9 +66,10 @@ def _getSortedStatewise(data):
         for district in state['districtData']:
             totalConfirmed = totalConfirmed + int(district['confirmed'])
         stateConfirmed[state['state']] = totalConfirmed
-    sortedData = sorted(stateConfirmed.items(), key=operator.itemgetter(1), \
+    sortedData = sorted(stateConfirmed.items(), key=operator.itemgetter(1),
                         reverse=True)
     return(sortedData)
+
 
 def _getSortedNational(data, keyBasis='active'):
     """ Returns ordered national data on the basis of max confirmed"""
@@ -72,9 +78,10 @@ def _getSortedNational(data, keyBasis='active'):
         stateName = str(state['state'])
         value = int(state[keyBasis])
         stateValue[stateName] = value
-    orderedData = sorted(stateValue.items(), key=operator.itemgetter(1), \
-                        reverse=True)
+    orderedData = sorted(stateValue.items(), key=operator.itemgetter(1),
+                         reverse=True)
     return(orderedData)
+
 
 def _getMessageNational():
     """ Returns formatted data for printing """
@@ -82,8 +89,8 @@ def _getMessageNational():
     orderedData = _getSortedNational(data)
     chars = 5  # Character spacing per column
     message = webPageLink + '\n' + \
-            '*Active*| *Recovered* ' +\
-            '*Deceased* | *Total* ``` \n'
+        '*Active*| *Recovered* ' +\
+        '*Deceased* | *Total* ``` \n'
     for state in orderedData:
         stateName = state[0]
         # Find rest of the values from dataset
@@ -92,12 +99,12 @@ def _getMessageNational():
                 if stateName.strip() != 'Total':
                     stateName = stateName[0:6].ljust(6, '.')
                 else:
-                    stateName = 'SUM'.ljust(3,'.')
-                code           = stateDict["statecode"].ljust(chars, ' ')
-                active         = stateDict["active"].ljust(chars, ' ')
-                confirmed      = stateDict["confirmed"].ljust(chars, ' ')
-                deaths         = stateDict["deaths"].ljust(chars, ' ')
-                recovered      = stateDict["recovered"].ljust(chars, ' ')
+                    stateName = 'SUM'.ljust(3, '.')
+                code = stateDict["statecode"].ljust(chars, ' ')
+                active = stateDict["active"].ljust(chars, ' ')
+                confirmed = stateDict["confirmed"].ljust(chars, ' ')
+                deaths = stateDict["deaths"].ljust(chars, ' ')
+                recovered = stateDict["recovered"].ljust(chars, ' ')
                 # deltaconfirmed = state["deltaconfirmed"]
                 # deltadeaths    = state["deltadeaths"]
                 # deltarecovered = state["deltarecovered"]
@@ -107,27 +114,30 @@ def _getMessageNational():
     message = message + ' ```'
     return message
 
+
 def _getMessageStatewise(stateName):
     data = _getSiteData(statewise=True)
     chars = 8
     for stateDict in data:
         if stateName == stateDict['state']:
             message = webPageLink + '\n' +  \
-                    '*District* | *Total Confirmed* ``` \n'
+                '*District* | *Total Confirmed* ``` \n'
             for district in stateDict['districtData']:
                 districtName = district['district']
                 confirmed = str(district['confirmed']).ljust(chars, ' ')
                 delta = str(district['delta']['confirmed']).ljust(chars, ' ')
                 message = message + districtName[0:10].ljust(14, '.') \
-                        + '|' + confirmed + '\n'
+                    + '|' + confirmed + '\n'
             break
     message = message + '```'
     return message
+
 
 def _initStateCodes(filename):
     global _stateNameCodeDict
     with open(filename, 'r') as scFile:
         _stateNameCodeDict = json.load(scFile)
+
 
 def start(update, context):
     """ start command """
@@ -135,17 +145,19 @@ def start(update, context):
     message = 'Use /help for a list of commands.'
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
+
 def help(update, context):
     """ help command """
     logging.info('Command invoked: help')
 
     message = "/covid19india - Displays stats of all states\n" + \
-              "/covid19india <state> - Displays stats of a <state>\n"+ \
+              "/covid19india <state> - Displays stats of a <state>\n" + \
               "/statecodes - Displays codes of states that can be used as <state>\n" + \
               "/mohfw - Displays the difference in cases reported by MOHFW\n" + \
               "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW reports higher"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+
 
 def statecodes(update, context):
     """ Displays state codes """
@@ -154,13 +166,15 @@ def statecodes(update, context):
     message = ''
     for stateName in _stateNameCodeDict:
         if len(stateName) == 2:
-            message = message + stateName + ': ' +  _stateNameCodeDict[stateName] + '\n'
+            message = message + stateName + ': ' + \
+                _stateNameCodeDict[stateName] + '\n'
 
     message = webPageLink + '\n *State codes*```\n\n' + message + '```'
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
-                            parse_mode=ParseMode.MARKDOWN, \
-                            disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message,
+                             parse_mode=ParseMode.MARKDOWN,
+                             disable_web_page_preview=True)
+
 
 def covid19india(update, context):
     """ Main command that retrieves and sends data """
@@ -176,9 +190,10 @@ def covid19india(update, context):
     else:  # National data requested
         message = _getMessageNational()
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
-                            parse_mode=ParseMode.MARKDOWN, \
-                            disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message,
+                             parse_mode=ParseMode.MARKDOWN,
+                             disable_web_page_preview=True)
+
 
 def mohfw(update, context):
     """ Compares covid19india.org data with MOHFW database """
@@ -207,13 +222,13 @@ def mohfw(update, context):
                 recoveredMOHFW = stateDict['cured']
                 deathsMOHFW = stateDict['death']
         if confirmedMOHFW == 'UNAVBL':
-            active_diff = 'UNAVBL'.ljust(5,' ')
-            recovered_diff = 'UNAVBL'.ljust(5,' ')
-            deaths_diff = 'UNAVBL'.ljust(5,' ')
-            activeMOHFW = 'UNAVBL'.ljust(5,' ')
+            active_diff = 'UNAVBL'.ljust(5, ' ')
+            recovered_diff = 'UNAVBL'.ljust(5, ' ')
+            deaths_diff = 'UNAVBL'.ljust(5, ' ')
+            activeMOHFW = 'UNAVBL'.ljust(5, ' ')
         else:
             active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                              int(deathsMOHFW) - casesSITE
+                int(deathsMOHFW) - casesSITE
             recovered_diff = int(recoveredMOHFW) - recoveredSITE
             deaths_diff = int(deathsMOHFW) - deathsSITE
             # String formatting
@@ -222,17 +237,17 @@ def mohfw(update, context):
             deaths_diff = '{0:+}'.format(deaths_diff).ljust(6, ' ')
 
         message = message + \
-                stateSITE[0:7].ljust(7, '.') + \
-                '|' + active_diff + '|' + recovered_diff + \
-                '|' + deaths_diff + '\n'
+            stateSITE[0:7].ljust(7, '.') + \
+            '|' + active_diff + '|' + recovered_diff + \
+            '|' + deaths_diff + '\n'
 
     message = '*State*.......|' + ' *MOHFW Reports..*' + \
-            '\n................|*ACTIV*|*RECOV*|*DEATHS* ' + \
-            '```\n' + message + '```' + \
-            '\n ' + webPageLink + '\n ' + 'https://www.mohfw.gov.in'
+        '\n................|*ACTIV*|*RECOV*|*DEATHS* ' + \
+        '```\n' + message + '```' + \
+        '\n ' + webPageLink + '\n ' + 'https://www.mohfw.gov.in'
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
-                             parse_mode=ParseMode.MARKDOWN, \
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message,
+                             parse_mode=ParseMode.MARKDOWN,
                              disable_web_page_preview=True)
 
 
@@ -244,12 +259,14 @@ def main():
 
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(CommandHandler('help', help))
-    updater.dispatcher.add_handler(CommandHandler('covid19india', covid19india))
+    updater.dispatcher.add_handler(
+        CommandHandler('covid19india', covid19india))
     updater.dispatcher.add_handler(CommandHandler('statecodes', statecodes))
     updater.dispatcher.add_handler(CommandHandler('mohfw', mohfw))
 
     updater.start_polling()
     updater.idle()
+
 
 if __name__ == '__main__':
     main()
