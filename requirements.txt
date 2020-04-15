@@ -1,0 +1,3 @@
+requests
+logging
+python-telegram-bot
