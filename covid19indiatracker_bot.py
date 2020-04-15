@@ -186,9 +186,13 @@ def mohfw(update, context):
         stateSITE = str(state[0])
         casesSITE = state[1]
         confirmedMOHFW = 'UNAVBL'
-        for stateMOHFW in dataMOHFW:
-            if stateMOHFW['state_name'] == stateSITE:
-                confirmedMOHFW = stateMOHFW['positive']
+        for stateDict in dataMOHFW:
+            stateMOHFW = str(stateDict['state name'])
+            if stateMOHFW == stateSITE:
+                confirmedMOHFW = stateDict['positive']
+            # Handle Telangana misspelling
+            if stateSITE == 'Telangana' and stateMOHFW == 'Telengana':
+                confirmedMOHFW = stateDict['positive']
         if confirmedMOHFW == 'UNAVBL':
             active_diff = 'UNAVBL'
         else:
