@@ -12,6 +12,7 @@ logging.basicConfig(filename='covid19indiatracker_bot.log', \
                     %(levelname)s - %(message)s', \
                     level=logging.INFO)
 webPageLink = 'https://www.covid19india.org'
+MOHFWLink = "https://www.mohfw.gov.in/dashboard/data/data.json"
 _stateNameCodeDict = {}
 
 def _getData(statewise=False):
@@ -22,8 +23,20 @@ def _getData(statewise=False):
         link = 'https://api.covid19india.org/v2/state_district_wise.json'
     try:
         data = requests.get(link).json()
-        return data
         logging.info('Stats retrieval: SUCCESS')
+        return data
+    except:
+        logging.info('Stats retrieval: FAILED')
+        return None
+
+def _getMOHFW():
+    """ Retrieves data from MOHFW site """
+    logging.info('Command invoked: covid19india')
+    link = MOHFWLink
+    try:
+        data = requests.get(link).json()
+        logging.info('Stats retrieval: SUCCESS')
+        return data
     except:
         logging.info('Stats retrieval: FAILED')
         return None
@@ -122,9 +135,12 @@ def start(update, context):
 def help(update, context):
     """ help command """
     logging.info('Command invoked: help')
+
     message = "/covid19india - Displays stats of all states\n" + \
               "/covid19india <state> - Displays stats of a <state>\n"+ \
-              "/statecodes - Displays codes of states that can be used as <state>"
+              "/statecodes - Displays codes of states that can be used as <state>\n" + \
+              "/mohfw - Displays acive cases reported by the two sites"
+
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
 def statecodes(update, context):
@@ -135,7 +151,9 @@ def statecodes(update, context):
     for stateName in _stateNameCodeDict:
         if len(stateName) == 2:
             message = message + stateName + ': ' +  _stateNameCodeDict[stateName] + '\n'
+
     message = webPageLink + '\n *State codes* ```\n' + message + '```'
+
     context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
                             parse_mode=ParseMode.MARKDOWN, \
                             disable_web_page_preview=True)
@@ -153,9 +171,41 @@ def covid19india(update, context):
             message = 'Invalid state name. Use /statecodes to display codes.'
     else:  # National data requested
         message = _getNationalStats()
+
     context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
                             parse_mode=ParseMode.MARKDOWN, \
                             disable_web_page_preview=True)
+
+def mohfw(update, context):
+    """ Compares covid19india.org data with MOHFW database """
+    data = _getData()
+    dataCOVIDINDIA = _getOrderedNational(data, keyBasis='confirmed')
+    dataMOHFW = _getMOHFW()
+    message = '\n'
+    for state in dataCOVIDINDIA:
+        stateSITE = str(state[0])
+        casesSITE = state[1]
+        confirmedMOHFW = 'UNAVBL'
+        for stateMOHFW in dataMOHFW:
+            if stateMOHFW['state_name'] == stateSITE:
+                confirmedMOHFW = stateMOHFW['positive']
+        if confirmedMOHFW == 'UNAVBL':
+            active_diff = 'UNAVBL'
+        else:
+            active_diff = str(int(confirmedMOHFW) - casesSITE)
+
+        message = message + \
+                stateSITE[0:6].ljust(6, '.') + \
+                '|' + active_diff.ljust(5,' ') + '\n'
+
+    message = '*State*.....|' + ' *MOHFW*|' + \
+            '\n```' + message + '```' + \
+            '\n ' + webPageLink + '\n ' + MOHFWLink
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
+                             parse_mode=ParseMode.MARKDOWN, \
+                             disable_web_page_preview=True)
+
 
 def main():
     logging.info('covid19india_bot started')
@@ -167,6 +217,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('help', help))
     updater.dispatcher.add_handler(CommandHandler('covid19india', covid19india))
     updater.dispatcher.add_handler(CommandHandler('statecodes', statecodes))
+    updater.dispatcher.add_handler(CommandHandler('mohfw', mohfw))
 
     updater.start_polling()
     updater.idle()
