@@ -201,6 +201,7 @@ def mohfw(update, context):
     dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
     dataMOHFW = _getMOHFWData()
     message = '\n'
+    chars = 6
 
     for state in dataSITE:
         stateSITE = str(state[0])
@@ -222,22 +223,29 @@ def mohfw(update, context):
                 recoveredMOHFW = stateDict['cured']
                 deathsMOHFW = stateDict['death']
         if confirmedMOHFW == 'UNAVBL':
-            active_diff = 'UNAVBL'.ljust(5, ' ')
-            recovered_diff = 'UNAVBL'.ljust(5, ' ')
-            deaths_diff = 'UNAVBL'.ljust(5, ' ')
-            activeMOHFW = 'UNAVBL'.ljust(5, ' ')
+            active_diff = 'UNAVBL'.ljust(chars, ' ')
+            recovered_diff = 'UNAVBL'.ljust(chars, ' ')
+            deaths_diff = 'UNAVBL'.ljust(chars, ' ')
+            activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
         else:
             active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
                 int(deathsMOHFW) - casesSITE
             recovered_diff = int(recoveredMOHFW) - recoveredSITE
             deaths_diff = int(deathsMOHFW) - deathsSITE
             # String formatting
-            active_diff = '{0:+}'.format(active_diff).ljust(6, ' ')
-            recovered_diff = '{0:+}'.format(recovered_diff).ljust(6, ' ')
-            deaths_diff = '{0:+}'.format(deaths_diff).ljust(6, ' ')
+            active_diff = '{0:+}'.format(active_diff).ljust(chars, ' ')
+            recovered_diff = '{0:+}'.format(recovered_diff).ljust(chars, ' ')
+            deaths_diff = '{0:+}'.format(deaths_diff).ljust(chars, ' ')
+            # Check for +0 and change to _0
+            if active_diff.strip() == '+0':
+                active_diff = ' 0'.ljust(chars, ' ')
+            if recovered_diff.strip() == '+0':
+                recovered_diff = ' 0'.ljust(chars, ' ')
+            if deaths_diff.strip() == '+0':
+                deaths_diff = ' 0'.ljust(chars, ' ')
 
         message = message + \
-            stateSITE[0:7].ljust(7, '.') + \
+            stateSITE[0:chars+2].ljust(chars+2, '.') + \
             '|' + active_diff + '|' + recovered_diff + \
             '|' + deaths_diff + '\n'
 
