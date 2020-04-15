@@ -1,4 +1,7 @@
 """ A Telegram bot to retrieve stats from the covid19india.org site """
+from sys import version_info
+if version_info.major > 2:
+    raise Exception('This code does not work with Python 3. Use Python 2')
 import json, requests
 import logging
 from telegram.ext import Updater, CommandHandler
