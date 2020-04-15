@@ -139,7 +139,8 @@ def help(update, context):
     message = "/covid19india - Displays stats of all states\n" + \
               "/covid19india <state> - Displays stats of a <state>\n"+ \
               "/statecodes - Displays codes of states that can be used as <state>\n" + \
-              "/mohfw - Displays acive cases reported by the two sites"
+              "/mohfw - Displays the difference in cases reported by MOHFW\n" + \
+              "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW reports higher"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
@@ -178,32 +179,53 @@ def covid19india(update, context):
 
 def mohfw(update, context):
     """ Compares covid19india.org data with MOHFW database """
-    dataSITE = _getSiteData()
-    dataSITE = _getSortedNational(dataSITE, keyBasis='confirmed')
+    dataSITE_raw = _getSiteData()
+    dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
     dataMOHFW = _getMOHFWData()
     message = '\n'
+
     for state in dataSITE:
         stateSITE = str(state[0])
         casesSITE = state[1]
+        # Obtain deaths and recovered for each state from site dataset
+        for stateDict in dataSITE_raw['statewise']:
+            if stateSITE == stateDict['state']:
+                deathsSITE = int(stateDict["deaths"])
+                recoveredSITE = int(stateDict["recovered"])
+
         confirmedMOHFW = 'UNAVBL'
         for stateDict in dataMOHFW:
-            stateMOHFW = str(stateDict['state name'])
-            if stateMOHFW == stateSITE:
+            stateMOHFW = str(stateDict['state_name'])
+            # Check for matching state name in MOHFW database
+            # 1. Handle Telangana misspelling
+            if stateMOHFW == stateSITE or \
+               (stateSITE == 'Telangana' and stateMOHFW == 'Telengana'):
                 confirmedMOHFW = stateDict['positive']
-            # Handle Telangana misspelling
-            if stateSITE == 'Telangana' and stateMOHFW == 'Telengana':
-                confirmedMOHFW = stateDict['positive']
+                recoveredMOHFW = stateDict['cured']
+                deathsMOHFW = stateDict['death']
         if confirmedMOHFW == 'UNAVBL':
-            active_diff = 'UNAVBL'
+            active_diff = 'UNAVBL'.ljust(5,' ')
+            recovered_diff = 'UNAVBL'.ljust(5,' ')
+            deaths_diff = 'UNAVBL'.ljust(5,' ')
+            activeMOHFW = 'UNAVBL'.ljust(5,' ')
         else:
-            active_diff = str(int(confirmedMOHFW) - casesSITE)
+            active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                              int(deathsMOHFW) - casesSITE
+            recovered_diff = int(recoveredMOHFW) - recoveredSITE
+            deaths_diff = int(deathsMOHFW) - deathsSITE
+            # String formatting
+            active_diff = '{0:+}'.format(active_diff).ljust(6, ' ')
+            recovered_diff = '{0:+}'.format(recovered_diff).ljust(6, ' ')
+            deaths_diff = '{0:+}'.format(deaths_diff).ljust(6, ' ')
 
         message = message + \
                 stateSITE[0:7].ljust(7, '.') + \
-                '|' + active_diff.ljust(5,' ') + '\n'
+                '|' + active_diff + '|' + recovered_diff + \
+                '|' + deaths_diff + '\n'
 
-    message = '*State*.....|' + ' *MOHFW*|' + \
-            '```\n\n' + message + '```' + \
+    message = '*State*.......|' + ' *MOHFW Reports..*' + \
+            '\n................|*ACTIV*|*RECOV*|*DEATHS* ' + \
+            '```\n' + message + '```' + \
             '\n ' + webPageLink + '\n ' + 'https://www.mohfw.gov.in'
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
