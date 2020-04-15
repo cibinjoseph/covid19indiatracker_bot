@@ -205,12 +205,13 @@ def mohfw(update, context):
 
     for state in dataSITE:
         stateSITE = str(state[0])
-        casesSITE = state[1]
+        activeSITE = state[1]
         # Obtain deaths and recovered for each state from site dataset
         for stateDict in dataSITE_raw['statewise']:
             if stateSITE == stateDict['state']:
-                deathsSITE = int(stateDict["deaths"])
-                recoveredSITE = int(stateDict["recovered"])
+                confirmedSITE = int(stateDict['confirmed'])
+                deathsSITE = int(stateDict['deaths'])
+                recoveredSITE = int(stateDict['recovered'])
 
         confirmedMOHFW = 'UNAVBL'
         for stateDict in dataMOHFW:
@@ -223,20 +224,25 @@ def mohfw(update, context):
                 recoveredMOHFW = stateDict['cured']
                 deathsMOHFW = stateDict['death']
         if confirmedMOHFW == 'UNAVBL':
+            confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
             active_diff = 'UNAVBL'.ljust(chars, ' ')
             recovered_diff = 'UNAVBL'.ljust(chars, ' ')
             deaths_diff = 'UNAVBL'.ljust(chars, ' ')
             activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
         else:
+            confirmed_diff = int(confirmedMOHFW) - confirmedSITE
             active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                int(deathsMOHFW) - casesSITE
+                int(deathsMOHFW) - activeSITE
             recovered_diff = int(recoveredMOHFW) - recoveredSITE
             deaths_diff = int(deathsMOHFW) - deathsSITE
             # String formatting
+            confirmed_diff = '{0:+}'.format(confirmed_diff).ljust(chars, ' ')
             active_diff = '{0:+}'.format(active_diff).ljust(chars, ' ')
             recovered_diff = '{0:+}'.format(recovered_diff).ljust(chars, ' ')
             deaths_diff = '{0:+}'.format(deaths_diff).ljust(chars, ' ')
             # Check for +0 and change to _0
+            if confirmed_diff.strip() == '+0':
+                confirmed_diff = ' 0'.ljust(chars, ' ')
             if active_diff.strip() == '+0':
                 active_diff = ' 0'.ljust(chars, ' ')
             if recovered_diff.strip() == '+0':
@@ -246,11 +252,11 @@ def mohfw(update, context):
 
         message = message + \
             stateSITE[0:chars+2].ljust(chars+2, '.') + \
-            '|' + active_diff + '|' + recovered_diff + \
+            '|' + confirmed_diff + '|' + recovered_diff + \
             '|' + deaths_diff + '\n'
 
     message = '*State*.......|' + ' *MOHFW Reports..*' + \
-        '\n................|*ACTIV*|*RECOV*|*DEATHS* ' + \
+        '\n................|*CNFRMD*|*RECOV*|*DEATHS* ' + \
         '```\n' + message + '```' + \
         '\n ' + webPageLink + '\n ' + 'https://www.mohfw.gov.in'
 
