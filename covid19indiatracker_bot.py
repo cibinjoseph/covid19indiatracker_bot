@@ -15,7 +15,7 @@ webPageLink = 'https://www.covid19india.org'
 MOHFWLink = "https://www.mohfw.gov.in/dashboard/data/data.json"
 _stateNameCodeDict = {}
 
-def _getData(statewise=False):
+def _getSiteData(statewise=False):
     """ Retrieves data from api link """
     if statewise == False:
         link = 'https://api.covid19india.org/data.json'
@@ -29,7 +29,7 @@ def _getData(statewise=False):
         logging.info('Stats retrieval: FAILED')
         return None
 
-def _getMOHFW():
+def _getMOHFWData():
     """ Retrieves data from MOHFW site """
     logging.info('Command invoked: covid19india')
     link = MOHFWLink
@@ -50,7 +50,7 @@ def _readToken(filename):
     else:
         return TOKEN
 
-def _getOrderedState(data):
+def _getSortedStatewise(data):
     """ Returns ordered statewise data on the basis of max confirmed"""
     stateConfirmed = {}
     for state in data:
@@ -58,11 +58,11 @@ def _getOrderedState(data):
         for district in state['districtData']:
             totalConfirmed = totalConfirmed + int(district['confirmed'])
         stateConfirmed[state['state']] = totalConfirmed
-    orderedData = sorted(stateConfirmed.items(), key=operator.itemgetter(1), \
+    sortedData = sorted(stateConfirmed.items(), key=operator.itemgetter(1), \
                         reverse=True)
-    return(orderedData)
+    return(sortedData)
 
-def _getOrderedNational(data, keyBasis='active'):
+def _getSortedNational(data, keyBasis='active'):
     """ Returns ordered national data on the basis of max confirmed"""
     stateValue = {}
     for state in data['statewise']:
@@ -73,10 +73,10 @@ def _getOrderedNational(data, keyBasis='active'):
                         reverse=True)
     return(orderedData)
 
-def _getNationalStats():
+def _getMessageNational():
     """ Returns formatted data for printing """
-    data = _getData()
-    orderedData = _getOrderedNational(data)
+    data = _getSiteData()
+    orderedData = _getSortedNational(data)
     chars = 5  # Character spacing per column
     message = webPageLink + '\n' + \
             '*Active*| *Recovered* ' +\
@@ -104,8 +104,8 @@ def _getNationalStats():
     message = message + ' ```'
     return message
 
-def _getStatewiseStats(stateName):
-    data = _getData(statewise=True)
+def _getMessageStatewise(stateName):
+    data = _getSiteData(statewise=True)
     chars = 8
     for stateDict in data:
         if stateName == stateDict['state']:
@@ -152,7 +152,7 @@ def statecodes(update, context):
         if len(stateName) == 2:
             message = message + stateName + ': ' +  _stateNameCodeDict[stateName] + '\n'
 
-    message = webPageLink + '\n *State codes* ```\n' + message + '```'
+    message = webPageLink + '\n *State codes*```\n\n' + message + '```'
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
                             parse_mode=ParseMode.MARKDOWN, \
@@ -166,11 +166,11 @@ def covid19india(update, context):
     if len(stateName) > 1:  # State data requested
         try:
             stateName = _stateNameCodeDict[stateName]
-            message = _getStatewiseStats(stateName)
+            message = _getMessageStatewise(stateName)
         except KeyError:
             message = 'Invalid state name. Use /statecodes to display codes.'
     else:  # National data requested
-        message = _getNationalStats()
+        message = _getMessageNational()
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
                             parse_mode=ParseMode.MARKDOWN, \
@@ -178,11 +178,11 @@ def covid19india(update, context):
 
 def mohfw(update, context):
     """ Compares covid19india.org data with MOHFW database """
-    data = _getData()
-    dataCOVIDINDIA = _getOrderedNational(data, keyBasis='confirmed')
-    dataMOHFW = _getMOHFW()
+    dataSITE = _getSiteData()
+    dataSITE = _getSortedNational(dataSITE, keyBasis='confirmed')
+    dataMOHFW = _getMOHFWData()
     message = '\n'
-    for state in dataCOVIDINDIA:
+    for state in dataSITE:
         stateSITE = str(state[0])
         casesSITE = state[1]
         confirmedMOHFW = 'UNAVBL'
@@ -195,12 +195,12 @@ def mohfw(update, context):
             active_diff = str(int(confirmedMOHFW) - casesSITE)
 
         message = message + \
-                stateSITE[0:6].ljust(6, '.') + \
+                stateSITE[0:7].ljust(7, '.') + \
                 '|' + active_diff.ljust(5,' ') + '\n'
 
     message = '*State*.....|' + ' *MOHFW*|' + \
-            '\n```' + message + '```' + \
-            '\n ' + webPageLink + '\n ' + MOHFWLink
+            '```\n\n' + message + '```' + \
+            '\n ' + webPageLink + '\n ' + 'https://www.mohfw.gov.in'
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message, \
                              parse_mode=ParseMode.MARKDOWN, \
