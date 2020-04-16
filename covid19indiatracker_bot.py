@@ -176,7 +176,7 @@ def statecodes(update, context):
             message = message + stateName + ': ' + \
                 _stateNameCodeDict[stateName] + '\n'
 
-    message = webPageLink + '\n```'+ 'State codes\n\n' + message + '```'
+    message = webPageLink + '```'+ '\n\nState codes\n\n' + message + '```'
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message,
                              parse_mode=ParseMode.MARKDOWN,
@@ -207,7 +207,7 @@ def mohfw(update, context):
     dataSITE_raw = _getSiteData()
     dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
     dataMOHFW = _getMOHFWData()
-    message = 'MOHFW Reports : ' \
+    message = '\nMOHFW Reports : ' \
         + '\n\n' \
         + 'REGION'.ljust(8, '.') + '|'\
         + 'CNFRD'.ljust(6, '.') + '|'\
