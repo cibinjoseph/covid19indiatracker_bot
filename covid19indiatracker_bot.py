@@ -1,7 +1,7 @@
 """ A Telegram bot to retrieve stats from the covid19india.org site """
 from sys import version_info
-if version_info.major > 2:
-    raise Exception('This code does not work with Python 3. Use Python 2')
+# if version_info.major > 2:
+#     raise Exception('This code does not work with Python 3. Use Python 2')
 import requests
 import json
 import operator
@@ -88,18 +88,25 @@ def _getMessageNational():
     data = _getSiteData()
     orderedData = _getSortedNational(data)
     chars = 5  # Character spacing per column
-    message = webPageLink + '\n' + \
-        '*Active*| *Recovered* ' +\
-        '*Deceased* | *Total* ``` \n'
+    message = '\n' \
+    + webPageLink \
+    + '\n\n' \
+    + 'REGION'.ljust(5, '.') + '|'\
+    + 'CONF'.ljust(5, '.') + '|'\
+    + 'RECO'.ljust(5, '.') + '|'\
+    + 'DECE'.ljust(5, '.') + '|'\
+    + 'ACTI'.ljust(5, '.') + '\n'\
+    + '------|-----|-----|-----|-----\n'
+
     for state in orderedData:
         stateName = state[0]
         # Find rest of the values from dataset
         for stateDict in data['statewise']:
             if stateName == stateDict['state']:
                 if stateName.strip() != 'Total':
-                    stateName = stateName[0:6].ljust(6, '.')
+                    stateName = stateName[0:6].ljust(6, ' ')
                 else:
-                    stateName = 'SUM'.ljust(3, '.')
+                    stateName = 'INDIA.'
                 code = stateDict["statecode"].ljust(chars, ' ')
                 active = stateDict["active"].ljust(chars, ' ')
                 confirmed = stateDict["confirmed"].ljust(chars, ' ')
@@ -109,9 +116,9 @@ def _getMessageNational():
                 # deltadeaths    = state["deltadeaths"]
                 # deltarecovered = state["deltarecovered"]
         message = message + stateName + '|' \
-            + active + '|' + recovered + '|' \
-            + deaths + '|' + confirmed + '\n'
-    message = message + ' ```'
+            + confirmed + '|' + recovered + '|' \
+            + deaths + '|' + active + '\n'
+    message = '```' + message + '```'
     return message
 
 
@@ -121,7 +128,7 @@ def _getMessageStatewise(stateName):
     for stateDict in data:
         if stateName == stateDict['state']:
             message = webPageLink + '\n' +  \
-                '*District* | *Total Confirmed* ``` \n'
+                'District | Total Confirmed \n'
             for district in stateDict['districtData']:
                 districtName = district['district']
                 confirmed = str(district['confirmed']).ljust(chars, ' ')
@@ -129,7 +136,7 @@ def _getMessageStatewise(stateName):
                 message = message + districtName[0:10].ljust(14, '.') \
                     + '|' + confirmed + '\n'
             break
-    message = message + '```'
+    message = '```' +  message + '```'
     return message
 
 
@@ -154,7 +161,7 @@ def help(update, context):
               "/covid19india <state> - Displays stats of a <state>\n" + \
               "/statecodes - Displays codes of states that can be used as <state>\n" + \
               "/mohfw - Displays the difference in cases reported by MOHFW\n" + \
-              "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW reports higher"
+              "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW reports higher cases than covid19india.org"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
@@ -169,7 +176,7 @@ def statecodes(update, context):
             message = message + stateName + ': ' + \
                 _stateNameCodeDict[stateName] + '\n'
 
-    message = webPageLink + '\n *State codes*```\n\n' + message + '```'
+    message = webPageLink + '```'+ '\nState codes\n\n' + message + '```'
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message,
                              parse_mode=ParseMode.MARKDOWN,
@@ -200,7 +207,13 @@ def mohfw(update, context):
     dataSITE_raw = _getSiteData()
     dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
     dataMOHFW = _getMOHFWData()
-    message = '\n'
+    message = 'MOHFW Reports : ' \
+        + '\n\n' \
+        + 'REGION'.ljust(8, '.') + '|'\
+        + 'CNFRD'.ljust(6, '.') + '|'\
+        + 'RCVRD'.ljust(6, '.') + '|'\
+        + 'DECSD'.ljust(6, '.') + '\n'\
+        + '--------|------|------|------\n'
     chars = 6
 
     for state in dataSITE:
@@ -255,10 +268,7 @@ def mohfw(update, context):
             '|' + confirmed_diff + '|' + recovered_diff + \
             '|' + deaths_diff + '\n'
 
-    message = '*State*.......|' + ' *MOHFW Reports..*' + \
-        '\n................|*CNFRMD*|*RECOV*|*DEATHS* ' + \
-        '```\n' + message + '```' + \
-        '\n ' + webPageLink + '\n ' + 'https://www.mohfw.gov.in'
+    message = '```' + message + '```'
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message,
                              parse_mode=ParseMode.MARKDOWN,
