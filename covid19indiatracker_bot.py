@@ -128,7 +128,7 @@ def _getMessageStatewise(stateName):
     for stateDict in data:
         if stateName == stateDict['state']:
             message = webPageLink + '\n' +  \
-                'District | Total Confirmed \n'
+                'District'.ljust(14,' ') + '|Total Confirmed'.ljust(14,' ') + '\n'
             for district in stateDict['districtData']:
                 districtName = district['district']
                 confirmed = str(district['confirmed']).ljust(chars, ' ')
@@ -176,7 +176,7 @@ def statecodes(update, context):
             message = message + stateName + ': ' + \
                 _stateNameCodeDict[stateName] + '\n'
 
-    message = webPageLink + '```'+ '\nState codes\n\n' + message + '```'
+    message = webPageLink + '\n```'+ 'State codes\n\n' + message + '```'
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message,
                              parse_mode=ParseMode.MARKDOWN,
