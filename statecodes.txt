@@ -1,11 +1,9 @@
-Total TT
 Maharashtra MH
 Tamil Nadu TN
 Delhi DL
 Rajasthan RJ
 Telangana TG
 Uttar Pradesh UP
-Andhra Pradesh AP
 Gujarat GJ
 Madhya Pradesh MP
 Kerala KL
@@ -14,10 +12,8 @@ Karnataka KA
 Haryana HR
 Punjab PB
 West Bengal WB
-Bihar BR
 Odisha OR
 Uttarakhand UT
-Assam AS
 Himachal Pradesh HP
 Jharkhand JH
 Chandigarh CH
@@ -26,11 +22,9 @@ Goa GA
 Puducherry PY
 Ladakh LA
 Tripura TR
-Dadra and Nagar Haveli
+Dadra and Nagar Haveli DD
 Manipur MN
-Arunachal Pradesh AR
 Mizoram MZ
-Andaman and Nicobar Islands AN
 Daman and Diu DN
 Meghalaya ML
 Lakshadweep LD
