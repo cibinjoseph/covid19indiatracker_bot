@@ -193,7 +193,7 @@ def help(update, context):
               "/statecodes - Displays codes of states that can be used as <state>\n" + \
               "/mohfw - Displays data shown at the moment on MOHFW website\n" + \
               "/mohfwapi - Displays the diff. in cases reported by MOHFW API\n" + \
-              "/mohfwsite - Displays the diff. in cases reported by MOHFW site\n" + \
+              "/comparemohfw - Displays the diff. in cases reported by MOHFW site\n" + \
               "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW reports higher cases than covid19india.org"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
@@ -309,13 +309,13 @@ def mohfwapi(update, context):
                              parse_mode=ParseMode.MARKDOWN,
                              disable_web_page_preview=True)
 
-def mohfwsite(update, context):
+def comparemohfw(update, context):
     """ Compares covid19india.org data with MOHFW website data """
-    logging.info('Command invoked: mohfwsite')
+    logging.info('Command invoked: comparemohfw')
     dataSITE_raw = _getSiteData()
     dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
     stateScraped, confirmedScraped, recoveredScraped, deathsScraped = _getMOHFWData(site=True)
-    message = '\nMOHFW Reports (SITE): ' \
+    message = '\nMOHFW Site Reports: ' \
         + '\n\n' \
         + 'REGION'.ljust(8, '.') + '|'\
         + 'CNFRD'.ljust(6, '.') + '|'\
@@ -472,7 +472,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('statecodes', statecodes))
     updater.dispatcher.add_handler(CommandHandler('mohfw', mohfw))
     updater.dispatcher.add_handler(CommandHandler('mohfwapi', mohfwapi))
-    updater.dispatcher.add_handler(CommandHandler('mohfwsite', mohfwsite))
+    updater.dispatcher.add_handler(CommandHandler('comparemohfw', comparemohfw))
 
     updater.start_polling()
     updater.idle()
