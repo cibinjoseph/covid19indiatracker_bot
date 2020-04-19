@@ -192,6 +192,7 @@ def help(update, context):
               "/covid19india <state> - Displays stats of a <state>\n" + \
               "/statecodes - Displays codes of states that can be used as <state>\n" + \
               "/mohfw - Displays data shown at the moment on MOHFW website\n" + \
+              "/mohfwapi - Displays the diff. in cases reported by MOHFW API\n" + \
               "/comparemohfw - Displays the diff. in cases reported by MOHFW site\n" + \
               "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW reports higher cases than covid19india.org"
 
@@ -470,7 +471,7 @@ def main():
         CommandHandler('covid19india', covid19india))
     updater.dispatcher.add_handler(CommandHandler('statecodes', statecodes))
     updater.dispatcher.add_handler(CommandHandler('mohfw', mohfw))
-    # updater.dispatcher.add_handler(CommandHandler('mohfwapi', mohfwapi))
+    updater.dispatcher.add_handler(CommandHandler('mohfwapi', mohfwapi))
     updater.dispatcher.add_handler(CommandHandler('comparemohfw', comparemohfw))
 
     updater.start_polling()
