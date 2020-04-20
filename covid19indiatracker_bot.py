@@ -289,22 +289,24 @@ def mohfwapi(update, context, compare=False):
             activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
         else:
             if compare == True:
+                leadingPlus = '{0:+}'
                 confirmed_diff = int(confirmedMOHFW) - confirmedSITE
                 active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
                     int(deathsMOHFW) - activeSITE
                 recovered_diff = int(recoveredMOHFW) - recoveredSITE
                 deaths_diff = int(deathsMOHFW) - deathsSITE
             else:
+                leadingPlus = '{0}'
                 confirmed_diff = int(confirmedMOHFW)
                 active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
                     int(deathsMOHFW)
                 recovered_diff = int(recoveredMOHFW)
                 deaths_diff = int(deathsMOHFW)
             # String formatting
-            confirmed_diff = '{0:+}'.format(confirmed_diff).ljust(chars, ' ')
-            active_diff = '{0:+}'.format(active_diff).ljust(chars, ' ')
-            recovered_diff = '{0:+}'.format(recovered_diff).ljust(chars, ' ')
-            deaths_diff = '{0:+}'.format(deaths_diff).ljust(chars, ' ')
+            confirmed_diff = leadingPlus.format(confirmed_diff).ljust(chars, ' ')
+            active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
+            recovered_diff = leadingPlus.format(recovered_diff).ljust(chars, ' ')
+            deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
             # Check for +0 and change to _0
             if confirmed_diff.strip() == '+0':
                 confirmed_diff = ' 0'.ljust(chars, ' ')
@@ -372,22 +374,24 @@ def mohfwsite(update, context, compare=False):
             activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
         else:
             if compare == True:
+                leadingPlus = '{0:+}'
                 confirmed_diff = int(confirmedMOHFW) - confirmedSITE
                 active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
                     int(deathsMOHFW) - activeSITE
                 recovered_diff = int(recoveredMOHFW) - recoveredSITE
                 deaths_diff = int(deathsMOHFW) - deathsSITE
             else:
+                leadingPlus = '{0}'
                 confirmed_diff = int(confirmedMOHFW)
                 active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
                     int(deathsMOHFW)
                 recovered_diff = int(recoveredMOHFW)
                 deaths_diff = int(deathsMOHFW)
             # String formatting
-            confirmed_diff = '{0:+}'.format(confirmed_diff).ljust(chars, ' ')
-            active_diff = '{0:+}'.format(active_diff).ljust(chars, ' ')
-            recovered_diff = '{0:+}'.format(recovered_diff).ljust(chars, ' ')
-            deaths_diff = '{0:+}'.format(deaths_diff).ljust(chars, ' ')
+            confirmed_diff = leadingPlus.format(confirmed_diff).ljust(chars, ' ')
+            active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
+            recovered_diff = leadingPlus.format(recovered_diff).ljust(chars, ' ')
+            deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
             # Check for +0 and change to _0
             if confirmed_diff.strip() == '+0':
                 confirmed_diff = ' 0'.ljust(chars, ' ')
