@@ -40,7 +40,7 @@ def _getSiteData(statewise=False):
 
 def _getMOHFWData(site=False):
     """ Retrieves data from MOHFW API or site"""
-    logging.info('Command invoked: covid19india')
+    logging.info('Command invoked: _getMOHFWData')
     if site == False:
         # Retrieve data from API
         try:
@@ -191,10 +191,21 @@ def help(update, context):
     message = "/covid19india - Displays stats of all states\n" + \
               "/covid19india <state> - Displays stats of a <state>\n" + \
               "/statecodes - Displays codes of states that can be used as <state>\n" + \
-              "/mohfw - Displays data shown at the moment on MOHFW website\n" + \
-              "/mohfwapi - Displays the diff. in cases reported by MOHFW API\n" + \
-              "/comparemohfw - Displays the diff. in cases reported by MOHFW site\n" + \
-              "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW reports higher cases than covid19india.org"
+              "/mohfw - Displays data from MOHFW database\n" + \
+              "/comparemohfw - Displays the diff. in cases reported by MOHFW database\n" + \
+              "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW " + \
+              " reports higher cases than covid19india.org\n" + \
+              "/advanced - Lists commands and options for advanced usage"
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+
+def advanced(update, context):
+    """ advanced command """
+    logging.info('Command invoked: advanced')
+
+    message = " Use the keyword 'site' after the commands\n" + \
+              "/mohfw and /comparemohfw for retrieving data directly\n" + \
+              " from the MOHFW website rather than the API provided by MOHFW\n"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
@@ -234,8 +245,7 @@ def covid19india(update, context):
                              parse_mode=ParseMode.MARKDOWN,
                              disable_web_page_preview=True)
 
-
-def mohfwapi(update, context):
+def mohfwapi(update, context, compare=False):
     """ Compares covid19india.org data with MOHFW database """
     logging.info('Command invoked: mohfwapi')
     # Check for arguments
@@ -278,11 +288,18 @@ def mohfwapi(update, context):
             deaths_diff = 'UNAVBL'.ljust(chars, ' ')
             activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
         else:
-            confirmed_diff = int(confirmedMOHFW) - confirmedSITE
-            active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                int(deathsMOHFW) - activeSITE
-            recovered_diff = int(recoveredMOHFW) - recoveredSITE
-            deaths_diff = int(deathsMOHFW) - deathsSITE
+            if compare == True:
+                confirmed_diff = int(confirmedMOHFW) - confirmedSITE
+                active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                    int(deathsMOHFW) - activeSITE
+                recovered_diff = int(recoveredMOHFW) - recoveredSITE
+                deaths_diff = int(deathsMOHFW) - deathsSITE
+            else:
+                confirmed_diff = int(confirmedMOHFW)
+                active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                    int(deathsMOHFW)
+                recovered_diff = int(recoveredMOHFW)
+                deaths_diff = int(deathsMOHFW)
             # String formatting
             confirmed_diff = '{0:+}'.format(confirmed_diff).ljust(chars, ' ')
             active_diff = '{0:+}'.format(active_diff).ljust(chars, ' ')
@@ -309,9 +326,9 @@ def mohfwapi(update, context):
                              parse_mode=ParseMode.MARKDOWN,
                              disable_web_page_preview=True)
 
-def comparemohfw(update, context):
+def mohfwsite(update, context, compare=False):
     """ Compares covid19india.org data with MOHFW website data """
-    logging.info('Command invoked: comparemohfw')
+    logging.info('Command invoked: mohfwsite')
     dataSITE_raw = _getSiteData()
     dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
     stateScraped, confirmedScraped, recoveredScraped, deathsScraped = _getMOHFWData(site=True)
@@ -346,6 +363,7 @@ def comparemohfw(update, context):
                 confirmedMOHFW = confirmedScraped[i]
                 recoveredMOHFW = recoveredScraped[i]
                 deathsMOHFW = deathsScraped[i]
+
         if confirmedMOHFW == 'UNAVBL':
             confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
             active_diff = 'UNAVBL'.ljust(chars, ' ')
@@ -353,11 +371,18 @@ def comparemohfw(update, context):
             deaths_diff = 'UNAVBL'.ljust(chars, ' ')
             activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
         else:
-            confirmed_diff = int(confirmedMOHFW) - confirmedSITE
-            active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                int(deathsMOHFW) - activeSITE
-            recovered_diff = int(recoveredMOHFW) - recoveredSITE
-            deaths_diff = int(deathsMOHFW) - deathsSITE
+            if compare == True:
+                confirmed_diff = int(confirmedMOHFW) - confirmedSITE
+                active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                    int(deathsMOHFW) - activeSITE
+                recovered_diff = int(recoveredMOHFW) - recoveredSITE
+                deaths_diff = int(deathsMOHFW) - deathsSITE
+            else:
+                confirmed_diff = int(confirmedMOHFW)
+                active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                    int(deathsMOHFW)
+                recovered_diff = int(recoveredMOHFW)
+                deaths_diff = int(deathsMOHFW)
             # String formatting
             confirmed_diff = '{0:+}'.format(confirmed_diff).ljust(chars, ' ')
             active_diff = '{0:+}'.format(active_diff).ljust(chars, ' ')
@@ -385,79 +410,24 @@ def comparemohfw(update, context):
                              disable_web_page_preview=True)
 
 def mohfw(update, context):
-    """ Displays MOHFW website data """
+    """ Displays data from MOHFW """
+    """ Data retrieved from API by default unless 'site' is specified """
     logging.info('Command invoked: mohfw')
-    dataSITE_raw = _getSiteData()
-    dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
-    stateScraped, confirmedScraped, recoveredScraped, deathsScraped = _getMOHFWData(site=True)
-    message = '\nMOHFW Reports (SITE): ' \
-        + '\n\n' \
-        + 'REGION'.ljust(8, '.') + '|'\
-        + 'CNFRD'.ljust(6, '.') + '|'\
-        + 'RCVRD'.ljust(6, '.') + '|'\
-        + 'DECSD'.ljust(6, '.') + '\n'\
-        + '--------|------|------|------\n'
-    chars = 6
+    if update.message.text.upper()  == '/MOHFW SITE':
+        logging.info('site keyword provided')
+        mohfwsite(update, context, compare=False)
+    else:
+        mohfwapi(update, context, compare=False)
 
-    for state in dataSITE:
-        stateSITE = str(state[0])
-        activeSITE = state[1]
-        # Obtain deaths and recovered for each state from site dataset
-        for stateDict in dataSITE_raw['statewise']:
-            if stateSITE == stateDict['state']:
-                confirmedSITE = int(stateDict['confirmed'])
-                deathsSITE = int(stateDict['deaths'])
-                recoveredSITE = int(stateDict['recovered'])
-
-        confirmedMOHFW = 'UNAVBL'
-        for i in range(len(stateScraped)):
-            stateMOHFW = stateScraped[i]
-            # Check for matching state name in MOHFW database
-            # 1. Handle Telangana misspelling
-            # 2. Handle '#' marks in some state names
-            if stateMOHFW == stateSITE or \
-               (stateSITE == 'Telangana' and stateMOHFW == 'Telengana') or \
-               (stateSITE == stateMOHFW.replace('#','')):
-                confirmedMOHFW = confirmedScraped[i]
-                recoveredMOHFW = recoveredScraped[i]
-                deathsMOHFW = deathsScraped[i]
-        if confirmedMOHFW == 'UNAVBL':
-            confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
-            active_diff = 'UNAVBL'.ljust(chars, ' ')
-            recovered_diff = 'UNAVBL'.ljust(chars, ' ')
-            deaths_diff = 'UNAVBL'.ljust(chars, ' ')
-            activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
-        else:
-            confirmed_diff = int(confirmedMOHFW)
-            active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                int(deathsMOHFW)
-            recovered_diff = int(recoveredMOHFW)
-            deaths_diff = int(deathsMOHFW)
-            # String formatting
-            confirmed_diff = '{0}'.format(confirmed_diff).ljust(chars, ' ')
-            active_diff = '{0}'.format(active_diff).ljust(chars, ' ')
-            recovered_diff = '{0}'.format(recovered_diff).ljust(chars, ' ')
-            deaths_diff = '{0}'.format(deaths_diff).ljust(chars, ' ')
-            # Check for +0 and change to _0
-            if confirmed_diff.strip() == '+0':
-                confirmed_diff = ' 0'.ljust(chars, ' ')
-            if active_diff.strip() == '+0':
-                active_diff = ' 0'.ljust(chars, ' ')
-            if recovered_diff.strip() == '+0':
-                recovered_diff = ' 0'.ljust(chars, ' ')
-            if deaths_diff.strip() == '+0':
-                deaths_diff = ' 0'.ljust(chars, ' ')
-
-        message = message + \
-            stateSITE[0:chars+2].ljust(chars+2, '.') + \
-            '|' + confirmed_diff + '|' + recovered_diff + \
-            '|' + deaths_diff + '\n'
-
-    message = '```' + message + '```'
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message,
-                             parse_mode=ParseMode.MARKDOWN,
-                             disable_web_page_preview=True)
+def comparemohfw(update, context):
+    """ Displays difference in data between MOHFW and covid19india.org """
+    """ Data retrieved from API by default unless 'site' is specified """
+    logging.info('Command invoked: comparemohfw')
+    if update.message.text.upper()  == '/COMPAREMOHFW SITE':
+        logging.info('site keyword provided')
+        mohfwsite(update, context, compare=True)
+    else:
+        mohfwapi(update, context, compare=True)
 
 def main():
     logging.info('covid19india_bot started')
@@ -467,12 +437,11 @@ def main():
 
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(CommandHandler('help', help))
-    updater.dispatcher.add_handler(
-        CommandHandler('covid19india', covid19india))
+    updater.dispatcher.add_handler(CommandHandler('covid19india', covid19india))
     updater.dispatcher.add_handler(CommandHandler('statecodes', statecodes))
     updater.dispatcher.add_handler(CommandHandler('mohfw', mohfw))
-    updater.dispatcher.add_handler(CommandHandler('mohfwapi', mohfwapi))
     updater.dispatcher.add_handler(CommandHandler('comparemohfw', comparemohfw))
+    updater.dispatcher.add_handler(CommandHandler('advanced', advanced))
 
     updater.start_polling()
     updater.idle()
