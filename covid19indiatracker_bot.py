@@ -58,8 +58,8 @@ def _getMOHFWData(site=False):
             soup = BeautifulSoup(MOHFWPage.data, 'html.parser')
             divTag = soup.find('table', attrs={'class': 'table table-striped'})
             rows = divTag.findAll('tr')
-            # Discard first and last three header and footer rows of table
-            rows = rows[1:-3]
+            # Discard first and last two header and footer rows of table
+            rows = rows[1:-2]
 
             stateName = []
             confirmed = []
