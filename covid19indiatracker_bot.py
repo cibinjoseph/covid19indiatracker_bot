@@ -58,8 +58,8 @@ def _getMOHFWData(site=False):
             soup = BeautifulSoup(MOHFWPage.data, 'html.parser')
             divTag = soup.find('table', attrs={'class': 'table table-striped'})
             rows = divTag.findAll('tr')
-            # Discard first and last two header and footer rows of table
-            rows = rows[1:-2]
+            # Discard first row containing header
+            rows = rows[1:]
 
             stateName = []
             confirmed = []
@@ -67,10 +67,12 @@ def _getMOHFWData(site=False):
             deaths = []
             for row in rows:
                 cols = row.findAll('td')
-                stateName.append(cols[1].text)
-                confirmed.append(cols[2].text)
-                recovered.append(cols[3].text)
-                deaths.append(cols[4].text)
+                if len(cols) == 5:
+                    print(row)
+                    stateName.append(cols[1].text)
+                    confirmed.append(cols[2].text)
+                    recovered.append(cols[3].text)
+                    deaths.append(cols[4].text)
 
             logging.info('Stats retrieval: SUCCESS')
             return stateName, confirmed, recovered, deaths
