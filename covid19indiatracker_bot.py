@@ -68,7 +68,6 @@ def _getMOHFWData(site=False):
             for row in rows:
                 cols = row.findAll('td')
                 if len(cols) == 5:
-                    print(row)
                     stateName.append(cols[1].text)
                     confirmed.append(cols[2].text)
                     recovered.append(cols[3].text)
@@ -205,7 +204,7 @@ def advanced(update, context):
     """ advanced command """
     logging.info('Command invoked: advanced')
 
-    message = " Use the keyword 'site' after the commands\n" + \
+    message = " Use the keyword 'api' after the commands\n" + \
               "/mohfw and /comparemohfw for retrieving data directly\n" + \
               " from the MOHFW website rather than the API provided by MOHFW\n"
 
@@ -417,23 +416,23 @@ def mohfwsite(update, context, compare=False):
 
 def mohfw(update, context):
     """ Displays data from MOHFW """
-    """ Data retrieved from API by default unless 'site' is specified """
+    """ Data retrieved from API by default unless 'api' is specified """
     logging.info('Command invoked: mohfw')
-    if update.message.text.upper()  == '/MOHFW SITE':
+    if update.message.text.upper()  == '/MOHFW API':
         logging.info('site keyword provided')
-        mohfwsite(update, context, compare=False)
-    else:
         mohfwapi(update, context, compare=False)
+    else:
+        mohfwsite(update, context, compare=False)
 
 def comparemohfw(update, context):
     """ Displays difference in data between MOHFW and covid19india.org """
-    """ Data retrieved from API by default unless 'site' is specified """
+    """ Data retrieved from API by default unless 'api' is specified """
     logging.info('Command invoked: comparemohfw')
-    if update.message.text.upper()  == '/COMPAREMOHFW SITE':
+    if update.message.text.upper()  == '/COMPAREMOHFW API':
         logging.info('site keyword provided')
-        mohfwsite(update, context, compare=True)
-    else:
         mohfwapi(update, context, compare=True)
+    else:
+        mohfwsite(update, context, compare=True)
 
 def main():
     logging.info('covid19india_bot started')
