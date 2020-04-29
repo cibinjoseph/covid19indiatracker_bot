@@ -171,12 +171,16 @@ def _getMessageStatewise(stateName):
     message = '```' +  message + '```'
     return message
 
-
 def _initStateCodes(filename):
     global _stateNameCodeDict
     with open(filename, 'r') as scFile:
         _stateNameCodeDict = json.load(scFile)
 
+def _removeSpecialChars(string):
+    badChars = ['#', '*', '+']
+    for badChar in badChars:
+        string = string.replace(badChar,'')
+    return string
 
 def start(update, context):
     """ start command """
@@ -364,13 +368,13 @@ def mohfwsite(update, context, compare=False):
                 stateMOHFW = stateScraped[i]
                 # Check for matching state name in MOHFW database
                 # 1. Handle Telangana misspelling
-                # 2. Handle '#' marks in some state names
+                # 2. Handle '#' marks in some state names and cases
                 if stateMOHFW == stateSITE or \
                    (stateSITE == 'Telangana' and stateMOHFW == 'Telengana') or \
-                   (stateSITE == stateMOHFW.replace('#','')):
-                    confirmedMOHFW = confirmedScraped[i]
-                    recoveredMOHFW = recoveredScraped[i]
-                    deathsMOHFW = deathsScraped[i]
+                   (stateSITE == _removeSpecialChars(stateMOHFW)):
+                    confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
+                    recoveredMOHFW = _removeSpecialChars(recoveredScraped[i])
+                    deathsMOHFW = _removeSpecialChars(deathsScraped[i])
 
             if confirmedMOHFW == 'UNAVBL':
                 confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
