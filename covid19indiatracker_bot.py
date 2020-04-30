@@ -388,11 +388,9 @@ def ndmaapi(update, context, compare=False):
                     deathsSITE = int(stateDict['deaths'])
                     recoveredSITE = int(stateDict['recovered'])
 
-            print(state)
             confirmedNDMA = 'UNAVBL'
             for stateDict in dataNDMA:
                 stateNDMA = str(stateDict['attributes']['state_name'])
-                # print(stateNDMA)
                 # Check for matching state name in MOHFW database
                 # 1. Handle Telangana misspelling
                 # 2. Handle Dadra '&' Nagar Haveli
