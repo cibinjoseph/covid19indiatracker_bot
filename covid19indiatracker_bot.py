@@ -20,6 +20,7 @@ logging.basicConfig(filename='covid19indiatracker_bot.log',
 webPageLink = 'https://www.covid19india.org'
 MOHFWAPILink = "https://www.mohfw.gov.in/dashboard/data/data.json"
 MOHFWLink = 'https://www.mohfw.gov.in'
+NDMALink = 'https://utility.arcgis.com/usrsvcs/servers/83b36886c90942ab9f67e7a212e515c8/rest/services/Corona/DailyCasesMoHUA/MapServer/0/query?f=json&where=1%3D1&returnGeometry=true&spatialRel=esriSpatialRelIntersects&maxAllowableOffset=9783&geometry=%7B%22xmin%22%3A5009377.085690986%2C%22ymin%22%3A0.000004991888999938965%2C%22xmax%22%3A10018754.171386965%2C%22ymax%22%3A5009377.08570097%2C%22spatialReference%22%3A%7B%22wkid%22%3A102100%7D%7D&geometryType=esriGeometryEnvelope&inSR=102100&outFields=*&outSR=102100&cacheHint=false'
 _stateNameCodeDict = {}
 
 
@@ -79,6 +80,20 @@ def _getMOHFWData(site=False):
             logging.info('Stats retrieval: FAILED')
             return None
 
+def _getNDMAData(site=False):
+    """ Retrieves data from NDMA API or site """
+    logging.info('Command invoked: getNDMAData')
+    if site:
+        return None
+    else:
+        # Retrieve data from API
+        try:
+            data = requests.get(NDMALink).json()
+            logging.info('Stats retrieval: SUCCESS')
+            return data['features']
+        except:
+            logging.info('Stats retrieval: FAILED')
+            return None
 
 def _readToken(filename):
     """ Read secret Bot TOKEN from file """
@@ -337,6 +352,110 @@ def mohfwapi(update, context, compare=False):
                              parse_mode=ParseMode.MARKDOWN,
                              disable_web_page_preview=True)
 
+def ndmasite(update, context, compare=False):
+    """ Compares covid19india.org data with NDMA website data """
+    logging.info('Command invoked: ndmasite')
+
+    message = 'FUNCTION NOT IMPLEMENTED'
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message,
+                             parse_mode=ParseMode.MARKDOWN,
+                             disable_web_page_preview=True)
+
+def ndmaapi(update, context, compare=False):
+    """ Compares covid19india.org data with NDMA database """
+    logging.info('Command invoked: ndmaapi')
+    # Check for arguments
+    dataSITE_raw = _getSiteData()
+    dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
+    dataNDMA = _getNDMAData()
+    message = '\nNDMA Reports (API): ' \
+        + '\n\n' \
+        + 'REGION'.ljust(8, '.') + '|'\
+        + 'CNFRD'.ljust(6, '.') + '|'\
+        + 'RCVRD'.ljust(6, '.') + '|'\
+        + 'DECSD'.ljust(6, '.') + '\n'\
+        + '--------|------|------|------\n'
+    chars = 6
+
+    try:
+        for state in dataSITE:
+            stateSITE = str(state[0])
+            activeSITE = state[1]
+            # Obtain deaths and recovered for each state from site dataset
+            for stateDict in dataSITE_raw['statewise']:
+                if stateSITE == stateDict['state']:
+                    confirmedSITE = int(stateDict['confirmed'])
+                    deathsSITE = int(stateDict['deaths'])
+                    recoveredSITE = int(stateDict['recovered'])
+
+            print(state)
+            confirmedNDMA = 'UNAVBL'
+            for stateDict in dataNDMA:
+                stateNDMA = str(stateDict['attributes']['state_name'])
+                # print(stateNDMA)
+                # Check for matching state name in MOHFW database
+                # 1. Handle Telangana misspelling
+                # 2. Handle Dadra '&' Nagar Haveli
+                # 3. Daman '&' Diu
+                if stateNDMA == stateSITE or \
+                   (stateSITE == 'Telangana' and stateNDMA == 'Telengana') or \
+                   (stateSITE == 'Dadra and Nagar Haveli' and stateNDMA ==
+                    'Dadra & Nagar Haveli') or \
+                   (stateSITE == 'Daman and Diu' and stateNDMA == 'Daman & Diu'):
+                    confirmedNDMA = stateDict['attributes']['confirmedcases']
+                    recoveredNDMA = stateDict['attributes']['cured_discharged_migrated']
+                    deathsNDMA = stateDict['attributes']['deaths']
+            if confirmedNDMA == 'UNAVBL' or (confirmedNDMA == None) or \
+               (recoveredNDMA == None) or (deathsNDMA == None):
+                confirmed_diff = 'UNAVBL'.ljust(chars, ' ')
+                active_diff = 'UNAVBL'.ljust(chars, ' ')
+                recovered_diff = 'UNAVBL'.ljust(chars, ' ')
+                deaths_diff = 'UNAVBL'.ljust(chars, ' ')
+                activeNDMA = 'UNAVBL'.ljust(chars, ' ')
+            else:
+                if compare == True:
+                    leadingPlus = '{0:+}'
+                    confirmed_diff = int(confirmedNDMA) - confirmedSITE
+                    active_diff = int(confirmedNDMA) - int(recoveredNDMA) - \
+                        int(deathsNDMA) - activeSITE
+                    recovered_diff = int(recoveredNDMA) - recoveredSITE
+                    deaths_diff = int(deathsNDMA) - deathsSITE
+                else:
+                    leadingPlus = '{0}'
+                    confirmed_diff = int(confirmedNDMA)
+                    active_diff = int(confirmedNDMA) - int(recoveredNDMA) - \
+                        int(deathsNDMA)
+                    recovered_diff = int(recoveredNDMA)
+                    deaths_diff = int(deathsNDMA)
+                # String formatting
+                confirmed_diff = leadingPlus.format(confirmed_diff).ljust(chars, ' ')
+                active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
+                recovered_diff = leadingPlus.format(recovered_diff).ljust(chars, ' ')
+                deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
+                # Check for +0 and change to _0
+                if confirmed_diff.strip() == '+0':
+                    confirmed_diff = ' 0'.ljust(chars, ' ')
+                if active_diff.strip() == '+0':
+                    active_diff = ' 0'.ljust(chars, ' ')
+                if recovered_diff.strip() == '+0':
+                    recovered_diff = ' 0'.ljust(chars, ' ')
+                if deaths_diff.strip() == '+0':
+                    deaths_diff = ' 0'.ljust(chars, ' ')
+
+            message = message + \
+                stateSITE[0:chars+2].ljust(chars+2, '.') + \
+                '|' + confirmed_diff + '|' + recovered_diff + \
+                '|' + deaths_diff + '\n'
+
+        message = '```' + message + '```'
+
+    except TypeError:
+        message = 'Data is unavailable. Please try later.'
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message,
+                             parse_mode=ParseMode.MARKDOWN,
+                             disable_web_page_preview=True)
+
 def mohfwsite(update, context, compare=False):
     """ Compares covid19india.org data with MOHFW website data """
     logging.info('Command invoked: mohfwsite')
@@ -438,13 +557,34 @@ def mohfw(update, context):
 
 def comparemohfw(update, context):
     """ Displays difference in data between MOHFW and covid19india.org """
-    """ Data retrieved from API by default unless 'api' is specified """
+    """ Data retrieved from SITE by default unless 'api' is specified """
     logging.info('Command invoked: comparemohfw')
     if update.message.text.upper()  == '/COMPAREMOHFW API':
-        logging.info('site keyword provided')
+        logging.info('api keyword provided')
         mohfwapi(update, context, compare=True)
     else:
         mohfwsite(update, context, compare=True)
+
+def ndma(update, context):
+    """ Displays data from NDMA """
+    """ Data retrieved from API by default unless 'site' is specified """
+    logging.info('Command invoked: ndma')
+    if update.message.text.upper()  == '/NDMA SITE':
+        logging.info('site keyword provided')
+        ndmasite(update, context, compare=False)
+    else:
+        ndmaapi(update, context, compare=False)
+
+def comparendma(update, context):
+    """ Displays difference in data between NDMA and covid19india.org """
+    """ Data retrieved from SITE by default unless 'api' is specified """
+    logging.info('Command invoked: comparendma')
+    if update.message.text.upper()  == '/COMPARENDMA SITE':
+        logging.info('site keyword provided')
+        ndmasite(update, context, compare=True)
+    else:
+        ndmaapi(update, context, compare=True)
+
 
 def main():
     logging.info('covid19india_bot started')
@@ -456,8 +596,13 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('help', help))
     updater.dispatcher.add_handler(CommandHandler('covid19india', covid19india))
     updater.dispatcher.add_handler(CommandHandler('statecodes', statecodes))
+
     updater.dispatcher.add_handler(CommandHandler('mohfw', mohfw))
     updater.dispatcher.add_handler(CommandHandler('comparemohfw', comparemohfw))
+
+    updater.dispatcher.add_handler(CommandHandler('ndma', ndma))
+    updater.dispatcher.add_handler(CommandHandler('comparendma', comparendma))
+
     updater.dispatcher.add_handler(CommandHandler('advanced', advanced))
 
     updater.start_polling()
