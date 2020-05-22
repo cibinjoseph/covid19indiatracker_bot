@@ -480,9 +480,6 @@ def mohfwsite(update, context, compare=False):
         for state in dataSITE:
             stateSITE = str(state[0])
             activeSITE = state[1]
-            # Handle "State Unassigned"
-            if (stateSITE == 'State Unassigned'):
-                continue
             # Obtain deaths and recovered for each state from site dataset
             for stateDict in dataSITE_raw['statewise']:
                 if stateSITE == stateDict['state']:
@@ -496,12 +493,21 @@ def mohfwsite(update, context, compare=False):
                 # Check for matching state name in MOHFW database
                 # 1. Handle Telangana misspelling
                 # 2. Handle '#' marks in some state names and cases
+                # 3. Handle "State Unassigned"
                 if stateMOHFW == stateSITE or \
                    (stateSITE == 'Telangana' and stateMOHFW == 'Telengana') or \
                    (stateSITE == _removeSpecialChars(stateMOHFW)):
                     confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
                     recoveredMOHFW = _removeSpecialChars(recoveredScraped[i])
                     deathsMOHFW = _removeSpecialChars(deathsScraped[i])
+                if stateSITE == 'State Unassigned' and \
+                   stateMOHFW == 'Cases being reassigned to states':
+                    stateSITE = 'UNASSN'
+                    confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
+                    active_diff = 'UNAVBL'.ljust(chars, ' ')
+                    deaths_diff = 'UNAVBL'.ljust(chars, ' ')
+                    recovered_diff = 'UNAVBL'.ljust(chars, ' ')
+
 
             if confirmedMOHFW == 'UNAVBL':
                 confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
@@ -514,22 +520,25 @@ def mohfwsite(update, context, compare=False):
                 if compare == True:
                     leadingPlus = '{0:+}'
                     confirmed_diff = int(confirmedMOHFW) - confirmedSITE
-                    active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                        int(deathsMOHFW) - activeSITE
-                    recovered_diff = int(recoveredMOHFW) - recoveredSITE
-                    deaths_diff = int(deathsMOHFW) - deathsSITE
+                    if stateSITE != 'UNASSN':
+                        active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                            int(deathsMOHFW) - activeSITE
+                        recovered_diff = int(recoveredMOHFW) - recoveredSITE
+                        deaths_diff = int(deathsMOHFW) - deathsSITE
                 else:
                     leadingPlus = '{0}'
                     confirmed_diff = int(confirmedMOHFW)
-                    active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                        int(deathsMOHFW)
-                    recovered_diff = int(recoveredMOHFW)
-                    deaths_diff = int(deathsMOHFW)
+                    if stateSITE != 'UNASSN':
+                        active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                            int(deathsMOHFW)
+                        recovered_diff = int(recoveredMOHFW)
+                        deaths_diff = int(deathsMOHFW)
                 # String formatting
                 confirmed_diff = leadingPlus.format(confirmed_diff).ljust(chars, ' ')
-                active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
-                recovered_diff = leadingPlus.format(recovered_diff).ljust(chars, ' ')
-                deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
+                if stateSITE != 'UNASSN':
+                    active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
+                    recovered_diff = leadingPlus.format(recovered_diff).ljust(chars, ' ')
+                    deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
                 # Check for +0 and change to _0
                 if confirmed_diff.strip() == '+0':
                     confirmed_diff = ' 0'.ljust(chars, ' ')
