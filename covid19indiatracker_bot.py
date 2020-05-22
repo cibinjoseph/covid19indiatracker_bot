@@ -545,10 +545,10 @@ def mohfwsite(update, context, compare=False):
 
 def mohfw(update, context):
     """ Displays data from MOHFW """
-    """ Data retrieved from API by default unless 'api' is specified """
+    """ Data retrieved from SITE by default unless 'api' is specified """
     logging.info('Command invoked: mohfw')
     if update.message.text.upper()  == '/MOHFW API':
-        logging.info('site keyword provided')
+        logging.info('api keyword provided')
         mohfwapi(update, context, compare=False)
     else:
         mohfwsite(update, context, compare=False)
