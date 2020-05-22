@@ -381,6 +381,9 @@ def ndmaapi(update, context, compare=False):
         for state in dataSITE:
             stateSITE = str(state[0])
             activeSITE = state[1]
+            # Handle "State Unassigned"
+            if (stateSITE == 'State Unassigned'):
+                continue
             # Obtain deaths and recovered for each state from site dataset
             for stateDict in dataSITE_raw['statewise']:
                 if stateSITE == stateDict['state']:
@@ -473,6 +476,9 @@ def mohfwsite(update, context, compare=False):
         for state in dataSITE:
             stateSITE = str(state[0])
             activeSITE = state[1]
+            # Handle "State Unassigned"
+            if (stateSITE == 'State Unassigned'):
+                continue
             # Obtain deaths and recovered for each state from site dataset
             for stateDict in dataSITE_raw['statewise']:
                 if stateSITE == stateDict['state']:
