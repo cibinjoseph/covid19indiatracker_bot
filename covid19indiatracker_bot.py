@@ -285,6 +285,9 @@ def mohfwapi(update, context, compare=False):
         for state in dataSITE:
             stateSITE = str(state[0])
             activeSITE = state[1]
+            # Handle "State Unassigned"
+            if (stateSITE == 'State Unassigned'):
+                continue
             # Obtain deaths and recovered for each state from site dataset
             for stateDict in dataSITE_raw['statewise']:
                 if stateSITE == stateDict['state']:
@@ -304,6 +307,7 @@ def mohfwapi(update, context, compare=False):
                     deathsMOHFW = stateDict['death']
             if confirmedMOHFW == 'UNAVBL':
                 confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
+                confirmed_diff = 'UNAVBL'.ljust(chars, ' ')
                 active_diff = 'UNAVBL'.ljust(chars, ' ')
                 recovered_diff = 'UNAVBL'.ljust(chars, ' ')
                 deaths_diff = 'UNAVBL'.ljust(chars, ' ')
@@ -501,6 +505,7 @@ def mohfwsite(update, context, compare=False):
 
             if confirmedMOHFW == 'UNAVBL':
                 confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
+                confirmed_diff = 'UNAVBL'.ljust(chars, ' ')
                 active_diff = 'UNAVBL'.ljust(chars, ' ')
                 recovered_diff = 'UNAVBL'.ljust(chars, ' ')
                 deaths_diff = 'UNAVBL'.ljust(chars, ' ')
