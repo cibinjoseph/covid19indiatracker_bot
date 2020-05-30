@@ -22,6 +22,7 @@ MOHFWAPILink = "https://www.mohfw.gov.in/dashboard/data/data.json"
 MOHFWLink = 'https://www.mohfw.gov.in'
 NDMALink = 'https://utility.arcgis.com/usrsvcs/servers/83b36886c90942ab9f67e7a212e515c8/rest/services/Corona/DailyCasesMoHUA/MapServer/0/query?f=json&where=1%3D1&returnGeometry=true&spatialRel=esriSpatialRelIntersects&maxAllowableOffset=9783&geometry=%7B%22xmin%22%3A5009377.085690986%2C%22ymin%22%3A0.000004991888999938965%2C%22xmax%22%3A10018754.171386965%2C%22ymax%22%3A5009377.08570097%2C%22spatialReference%22%3A%7B%22wkid%22%3A102100%7D%7D&geometryType=esriGeometryEnvelope&inSR=102100&outFields=*&outSR=102100&cacheHint=false'
 _stateNameCodeDict = {}
+unavblCode = 'UNAVBL'.ljust(6, ' ')
 
 
 def _getSiteData(statewise=False):
@@ -63,19 +64,22 @@ def _getMOHFWData(site=False):
             rows = rows[1:]
 
             stateName = []
-            confirmed = []
+            active = []
             recovered = []
             deaths = []
+            confirmed = []
             for row in rows:
                 cols = row.findAll('td')
-                if len(cols) == 5:
+                if len(cols) == 6:
                     stateName.append(cols[1].text)
-                    confirmed.append(cols[2].text)
+                    active.append(cols[2].text)
                     recovered.append(cols[3].text)
                     deaths.append(cols[4].text)
+                    confirmed.append(cols[5].text)
+
 
             logging.info('Stats retrieval: SUCCESS')
-            return stateName, confirmed, recovered, deaths
+            return stateName, active, recovered, deaths, confirmed
         except:
             logging.info('Stats retrieval: FAILED')
             return None
@@ -466,26 +470,29 @@ def mohfwsite(update, context, compare=False):
     logging.info('Command invoked: mohfwsite')
     dataSITE_raw = _getSiteData()
     dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
-    stateScraped, confirmedScraped, recoveredScraped, deathsScraped = _getMOHFWData(site=True)
-    message = '\nMOHFW Site Reports: ' \
-        + '\n\n' \
-        + 'REGION'.ljust(8, '.') + '|'\
-        + 'CNFRD'.ljust(6, '.') + '|'\
-        + 'RCVRD'.ljust(6, '.') + '|'\
-        + 'DECSD'.ljust(6, '.') + '\n'\
-        + '--------|------|------|------\n'
-    chars = 6
-
     try:
+        stateScraped, activeScraped, recoveredScraped, \
+                deathsScraped, confirmedScraped = _getMOHFWData(site=True)
+        message = '\nMOHFW Site Reports: ' \
+            + '\n\n' \
+            + 'REGION'.ljust(8, '.') + '|'\
+            + 'ACTIV'.ljust(6, '.') + '|'\
+            + 'RCVRD'.ljust(6, '.') + '|'\
+            + 'DECSD'.ljust(6, '.') + '|'\
+            + 'CNFRD'.ljust(6, '.') + '\n'\
+            + '--------|------|------|------|------\n'
+        chars = 6
+
         for state in dataSITE:
             stateSITE = str(state[0])
             activeSITE = state[1]
             # Obtain deaths and recovered for each state from site dataset
             for stateDict in dataSITE_raw['statewise']:
                 if stateSITE == stateDict['state']:
-                    confirmedSITE = int(stateDict['confirmed'])
+                    activeSITE = int(stateDict['active'])
                     deathsSITE = int(stateDict['deaths'])
                     recoveredSITE = int(stateDict['recovered'])
+                    confirmedSITE = int(stateDict['confirmed'])
 
             confirmedMOHFW = 'UNAVBL'
             for i in range(len(stateScraped)):
@@ -497,46 +504,49 @@ def mohfwsite(update, context, compare=False):
                 if stateMOHFW == stateSITE or \
                    (stateSITE == 'Telangana' and stateMOHFW == 'Telengana') or \
                    (stateSITE == _removeSpecialChars(stateMOHFW)):
-                    confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
+                    activeMOHFW = _removeSpecialChars(activeScraped[i])
                     recoveredMOHFW = _removeSpecialChars(recoveredScraped[i])
                     deathsMOHFW = _removeSpecialChars(deathsScraped[i])
+                    confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
                 if stateSITE == 'State Unassigned' and \
                    stateMOHFW == 'Cases being reassigned to states':
                     stateSITE = 'UNASSN'
                     confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
-                    active_diff = 'UNAVBL'.ljust(chars, ' ')
-                    deaths_diff = 'UNAVBL'.ljust(chars, ' ')
-                    recovered_diff = 'UNAVBL'.ljust(chars, ' ')
+                    activeMOHFW = _removeSpecialChars(activeScraped[i])
+                    deaths_diff = unavblCode
+                    recovered_diff = unavblCode
 
 
             if confirmedMOHFW == 'UNAVBL':
-                confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
-                confirmed_diff = 'UNAVBL'.ljust(chars, ' ')
-                active_diff = 'UNAVBL'.ljust(chars, ' ')
-                recovered_diff = 'UNAVBL'.ljust(chars, ' ')
-                deaths_diff = 'UNAVBL'.ljust(chars, ' ')
-                activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
+                confirmedMOHFW = unavblCode
+                confirmed_diff = unavblCode
+                active_diff = unavblCode
+                recovered_diff = unavblCode
+                deaths_diff = unavblCode
+                activeMOHFW = unavblCode
             else:
                 if compare == True:
                     leadingPlus = '{0:+}'
                     confirmed_diff = int(confirmedMOHFW) - confirmedSITE
+                    active_diff = int(activeMOHFW) - activeSITE
                     if stateSITE != 'UNASSN':
-                        active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                            int(deathsMOHFW) - activeSITE
+                        # active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                        #     int(deathsMOHFW) - activeSITE
                         recovered_diff = int(recoveredMOHFW) - recoveredSITE
                         deaths_diff = int(deathsMOHFW) - deathsSITE
                 else:
                     leadingPlus = '{0}'
                     confirmed_diff = int(confirmedMOHFW)
+                    active_diff = int(activeMOHFW)
                     if stateSITE != 'UNASSN':
-                        active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                            int(deathsMOHFW)
+                        # active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
+                        #     int(deathsMOHFW)
                         recovered_diff = int(recoveredMOHFW)
                         deaths_diff = int(deathsMOHFW)
                 # String formatting
                 confirmed_diff = leadingPlus.format(confirmed_diff).ljust(chars, ' ')
+                active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
                 if stateSITE != 'UNASSN':
-                    active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
                     recovered_diff = leadingPlus.format(recovered_diff).ljust(chars, ' ')
                     deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
                 # Check for +0 and change to _0
@@ -551,8 +561,8 @@ def mohfwsite(update, context, compare=False):
 
             message = message + \
                 stateSITE[0:chars+2].ljust(chars+2, '.') + \
-                '|' + confirmed_diff + '|' + recovered_diff + \
-                '|' + deaths_diff + '\n'
+                '|' + active_diff + '|' + recovered_diff + \
+                '|' + deaths_diff + '|' + confirmed_diff + '\n'
 
         message = '```' + message + '```'
 
