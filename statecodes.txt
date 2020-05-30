@@ -25,8 +25,15 @@ Tripura TR
 Dadra and Nagar Haveli DD
 Manipur MN
 Mizoram MZ
-Daman and Diu DN
+Dadra and Nagar Haveli and Daman and Diu DN
 Meghalaya ML
 Lakshadweep LD
 Nagaland NL
 Sikkim SK
+Bihar BR
+Andhra Pradesh AP
+Assam AS
+Arunachal Pradesh AR
+Andaman and Nicobar Islands AN
+Total TT
+State unassigned UN

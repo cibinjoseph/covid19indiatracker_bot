@@ -251,6 +251,15 @@ def statecodes(update, context):
                              disable_web_page_preview=True)
 
 
+def getStateCode(stateName):
+    global _stateNameCodeDict
+    stateName = _stateNameCodeDict[stateName.upper()]
+    for key, value in _stateNameCodeDict.items():
+        if stateName == value and len(key) == 2:
+            return key
+    return None
+
+
 def covid19india(update, context):
     """ Main command that retrieves and sends data """
     logging.info('Command invoked: covid19india')
@@ -475,12 +484,12 @@ def mohfwsite(update, context, compare=False):
                 deathsScraped, confirmedScraped = _getMOHFWData(site=True)
         message = '\nMOHFW Site Reports: ' \
             + '\n\n' \
-            + 'REGION'.ljust(8, '.') + '|'\
+            + 'ST' + '|'\
             + 'ACTIV'.ljust(6, '.') + '|'\
             + 'RCVRD'.ljust(6, '.') + '|'\
             + 'DECSD'.ljust(6, '.') + '|'\
             + 'CNFRD'.ljust(6, '.') + '\n'\
-            + '--------|------|------|------|------\n'
+            + '--|------|------|------|------\n'
         chars = 6
 
         for state in dataSITE:
@@ -504,19 +513,6 @@ def mohfwsite(update, context, compare=False):
                 # 4. Handle "Dadar Nagar haveli"
                 if stateMOHFW == stateSITE or \
                    (stateSITE == 'Telangana' and stateMOHFW == 'Telengana') or \
-                   (stateSITE == _removeSpecialChars(stateMOHFW)):
-                    activeMOHFW = _removeSpecialChars(activeScraped[i])
-                    recoveredMOHFW = _removeSpecialChars(recoveredScraped[i])
-                    deathsMOHFW = _removeSpecialChars(deathsScraped[i])
-                    confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
-                if stateSITE == 'State Unassigned' and \
-                   stateMOHFW == 'Cases being reassigned to states':
-                    stateSITE = 'UNASSN'
-                    confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
-                    activeMOHFW = _removeSpecialChars(activeScraped[i])
-                    deaths_diff = unavblCode
-                    recovered_diff = unavblCode
-                if stateMOHFW == stateSITE or \
                    (stateSITE == 'Dadra and Nagar Haveli and Daman and Diu' and \
                     stateMOHFW == 'Dadar Nagar Haveli') or \
                    (stateSITE == _removeSpecialChars(stateMOHFW)):
@@ -524,6 +520,14 @@ def mohfwsite(update, context, compare=False):
                     recoveredMOHFW = _removeSpecialChars(recoveredScraped[i])
                     deathsMOHFW = _removeSpecialChars(deathsScraped[i])
                     confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
+                    break
+                if stateSITE == 'State Unassigned' and \
+                   stateMOHFW == 'Cases being reassigned to states':
+                    confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
+                    activeMOHFW = _removeSpecialChars(activeScraped[i])
+                    deaths_diff = unavblCode
+                    recovered_diff = unavblCode
+                    break
 
 
             if confirmedMOHFW == 'UNAVBL':
@@ -538,7 +542,7 @@ def mohfwsite(update, context, compare=False):
                     leadingPlus = '{0:+}'
                     confirmed_diff = int(confirmedMOHFW) - confirmedSITE
                     active_diff = int(activeMOHFW) - activeSITE
-                    if stateSITE != 'UNASSN':
+                    if stateSITE != 'State Unassigned':
                         # active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
                         #     int(deathsMOHFW) - activeSITE
                         recovered_diff = int(recoveredMOHFW) - recoveredSITE
@@ -547,15 +551,16 @@ def mohfwsite(update, context, compare=False):
                     leadingPlus = '{0}'
                     confirmed_diff = int(confirmedMOHFW)
                     active_diff = int(activeMOHFW)
-                    if stateSITE != 'UNASSN':
+                    if stateSITE != 'State Unassigned':
                         # active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
                         #     int(deathsMOHFW)
                         recovered_diff = int(recoveredMOHFW)
                         deaths_diff = int(deathsMOHFW)
                 # String formatting
+                stateCode = getStateCode(stateSITE)
                 confirmed_diff = leadingPlus.format(confirmed_diff).ljust(chars, ' ')
                 active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
-                if stateSITE != 'UNASSN':
+                if stateSITE != 'State Unassigned':
                     recovered_diff = leadingPlus.format(recovered_diff).ljust(chars, ' ')
                     deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
                 # Check for +0 and change to _0
@@ -569,7 +574,7 @@ def mohfwsite(update, context, compare=False):
                     deaths_diff = ' 0'.ljust(chars, ' ')
 
             message = message + \
-                stateSITE[0:chars+2].ljust(chars+2, '.') + \
+                stateCode.ljust(2, '.') + \
                 '|' + active_diff + '|' + recovered_diff + \
                 '|' + deaths_diff + '|' + confirmed_diff + '\n'
 
