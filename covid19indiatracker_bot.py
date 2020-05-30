@@ -501,6 +501,7 @@ def mohfwsite(update, context, compare=False):
                 # 1. Handle Telangana misspelling
                 # 2. Handle '#' marks in some state names and cases
                 # 3. Handle "State Unassigned"
+                # 4. Handle "Dadar Nagar haveli"
                 if stateMOHFW == stateSITE or \
                    (stateSITE == 'Telangana' and stateMOHFW == 'Telengana') or \
                    (stateSITE == _removeSpecialChars(stateMOHFW)):
@@ -515,6 +516,14 @@ def mohfwsite(update, context, compare=False):
                     activeMOHFW = _removeSpecialChars(activeScraped[i])
                     deaths_diff = unavblCode
                     recovered_diff = unavblCode
+                if stateMOHFW == stateSITE or \
+                   (stateSITE == 'Dadra and Nagar Haveli and Daman and Diu' and \
+                    stateMOHFW == 'Dadar Nagar Haveli') or \
+                   (stateSITE == _removeSpecialChars(stateMOHFW)):
+                    activeMOHFW = _removeSpecialChars(activeScraped[i])
+                    recoveredMOHFW = _removeSpecialChars(recoveredScraped[i])
+                    deathsMOHFW = _removeSpecialChars(deathsScraped[i])
+                    confirmedMOHFW = _removeSpecialChars(confirmedScraped[i])
 
 
             if confirmedMOHFW == 'UNAVBL':
