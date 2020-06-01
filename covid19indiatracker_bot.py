@@ -529,6 +529,7 @@ def mohfwsite(update, context, compare=False):
                     break
 
 
+            stateCode = getStateCode(stateSITE)
             if confirmedMOHFW == 'UNAVBL':
                 confirmedMOHFW = unavblCode
                 confirmed_diff = unavblCode
@@ -556,7 +557,6 @@ def mohfwsite(update, context, compare=False):
                         recovered_diff = int(recoveredMOHFW)
                         deaths_diff = int(deathsMOHFW)
                 # String formatting
-                stateCode = getStateCode(stateSITE)
                 confirmed_diff = leadingPlus.format(confirmed_diff).ljust(chars, ' ')
                 active_diff = leadingPlus.format(active_diff).ljust(chars, ' ')
                 if stateSITE != 'State Unassigned':
