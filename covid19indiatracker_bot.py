@@ -478,7 +478,7 @@ def mohfwsite(update, context, compare=False):
     """ Compares covid19india.org data with MOHFW website data """
     logging.info('Command invoked: mohfwsite')
     dataSITE_raw = _getSiteData()
-    dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
+    dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')
     try:
         stateScraped, activeScraped, recoveredScraped, \
                 deathsScraped, confirmedScraped = _getMOHFWData(site=True)
@@ -505,7 +505,7 @@ def mohfwsite(update, context, compare=False):
 
             confirmedMOHFW = 'UNAVBL'
             for i in range(len(stateScraped)):
-                stateMOHFW = stateScraped[i]
+                stateMOHFW = _removeSpecialChars(stateScraped[i])
                 # Check for matching state name in MOHFW database
                 # 1. Handle Telangana misspelling
                 # 2. Handle '#' marks in some state names and cases
@@ -514,8 +514,7 @@ def mohfwsite(update, context, compare=False):
                 if stateMOHFW == stateSITE or \
                    (stateSITE == 'Telangana' and stateMOHFW == 'Telengana') or \
                    (stateSITE == 'Dadra and Nagar Haveli and Daman and Diu' and \
-                    stateMOHFW == 'Dadar Nagar Haveli') or \
-                   (stateSITE == _removeSpecialChars(stateMOHFW)):
+                    stateMOHFW == 'Dadar Nagar Haveli'):
                     activeMOHFW = _removeSpecialChars(activeScraped[i])
                     recoveredMOHFW = _removeSpecialChars(recoveredScraped[i])
                     deathsMOHFW = _removeSpecialChars(deathsScraped[i])
