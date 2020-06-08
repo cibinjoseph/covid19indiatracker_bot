@@ -229,9 +229,9 @@ def advanced(update, context):
     """ advanced command """
     logging.info('Command invoked: advanced')
 
-    message = "/recon - for value checks in data fields\n" + \
-              " Use the keyword 'api' after the commands\n" + \
-              "/mohfw and /comparemohfw for retrieving data directly\n" + \
+    message = "/recon - for value checks in data fields.\n" + \
+              " Use the keyword 'api' after the commands /mohfw and\n" + \
+              "/comparemohfw for retrieving data directly " + \
               " from the MOHFW website rather than the API provided by MOHFW\n"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
