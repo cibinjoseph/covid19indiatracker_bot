@@ -632,12 +632,15 @@ def comparendma(update, context):
 def recon(update, context):
     """ Checks for some invalid values in data """
     logging.info('Command invoked: recon')
-    chars = 6
+    chars = 7
     data = _getSiteData(statewise=True)
-    message = ' Districts with invalid values\n' + \
-            '===============================\n\n' + \
-            'ST|DSTRCT|ACTIV.|CNFRD.|DECSD.\n' + \
-            '--|------|------|------|------\n'
+    messageHeader = ' Districts with invalid values\n' + \
+            '______________________________\n\n' + \
+            'ST|DSTRICT|CNFRD..|ACTIV..|\n' + \
+            '__________|RCVRD..|DECSD..|\n' + \
+            '--|-------|-------|-------|\n'
+    message = ''
+    messageUn = ''
 
     for stateDict in data:
         stateCode = stateDict['statecode']
@@ -645,16 +648,29 @@ def recon(update, context):
             districtName = districtDict['district']
             active = districtDict['active']
             confirmed = districtDict['confirmed']
+            recovered = districtDict['recovered']
             deceased = districtDict['deceased']
 
-            if (active < 0) or (confirmed < 0) or (deceased < 0):
-                message += stateCode + '|' + \
-                        districtName[0:chars].ljust(chars, '.') + '|' + \
-                        str(active).ljust(chars, ' ') + '|' + \
-                        str(confirmed).ljust(chars, ' ') + '|' + \
-                        str(deceased).ljust(chars, ' ') + '\n'
+            if districtName == 'Unknown':
+                if (confirmed != 0) or (recovered != 0) or (deceased != 0):
+                    messageUn += stateCode + '|' + \
+                            districtName[0:chars].ljust(chars, '.') + '|' + \
+                            str(confirmed).ljust(chars, ' ') + '|' + \
+                            str(active).ljust(chars, ' ') + '|\n__________|' + \
+                            str(recovered).ljust(chars, ' ') + '|' + \
+                            str(deceased).ljust(chars, ' ') + '|\n'
+            else:
+                if (confirmed < 0) or (active < 0) or \
+                   (recovered < 0) or (deceased < 0):
+                    message += stateCode + '|' + \
+                            districtName[0:chars].ljust(chars, '.') + '|' + \
+                            str(confirmed).ljust(chars, ' ') + '|' + \
+                            str(active).ljust(chars, ' ') + '|\n__________|' + \
+                            str(recovered).ljust(chars, ' ') + '|' + \
+                            str(deceased).ljust(chars, ' ') + '|\n'
 
-    message = '```' + message + '```'
+    messageUn += '--|-------|-------|-------|\n'
+    message = '```' + messageHeader + messageUn + message + '```'
     context.bot.send_message(chat_id=update.effective_chat.id, text=message,
                              parse_mode=ParseMode.MARKDOWN,
                              disable_web_page_preview=True)
