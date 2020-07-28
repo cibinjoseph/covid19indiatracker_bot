@@ -20,7 +20,7 @@ logging.basicConfig(filename='covid19indiatracker_bot.log',
 
 webPageLink = 'https://www.covid19india.org'
 districts_daiyLink = "https://api.covid19india.org/districts_daily.json"
-MOHFWAPILink = "https://www.mohfw.gov.in/dashboard/data/data.json"
+MOHFWAPILink = "https://www.mohfw.gov.in/data/datanew.json"
 MOHFWLink = 'https://www.mohfw.gov.in'
 NDMALink = 'https://utility.arcgis.com/usrsvcs/servers/83b36886c90942ab9f67e7a212e515c8/rest/services/Corona/DailyCasesMoHUA/MapServer/0/query?f=json&where=1%3D1&returnGeometry=true&spatialRel=esriSpatialRelIntersects&maxAllowableOffset=9783&geometry=%7B%22xmin%22%3A5009377.085690986%2C%22ymin%22%3A0.000004991888999938965%2C%22xmax%22%3A10018754.171386965%2C%22ymax%22%3A5009377.08570097%2C%22spatialReference%22%3A%7B%22wkid%22%3A102100%7D%7D&geometryType=esriGeometryEnvelope&inSR=102100&outFields=*&outSR=102100&cacheHint=false'
 _stateNameCodeDict = {}
@@ -290,11 +290,12 @@ def mohfwapi(update, context, compare=False):
     dataMOHFW = _getMOHFWData()
     message = '\nMOHFW Reports (API): ' \
         + '\n\n' \
-        + 'REGION'.ljust(8, '.') + '|'\
-        + 'CNFRD'.ljust(6, '.') + '|'\
+        + 'ST' + '|'\
+        + 'ACTIV'.ljust(6, '.') + '|'\
         + 'RCVRD'.ljust(6, '.') + '|'\
-        + 'DECSD'.ljust(6, '.') + '\n'\
-        + '--------|------|------|------\n'
+        + 'DECSD'.ljust(6, '.') + '|'\
+        + 'CNFRD'.ljust(6, '.') + '\n'\
+        + '--|------|------|------|------\n'
     chars = 6
 
     try:
@@ -318,29 +319,31 @@ def mohfwapi(update, context, compare=False):
                 # 1. Handle Telangana misspelling
                 if stateMOHFW == stateSITE or \
                    (stateSITE == 'Telangana' and stateMOHFW == 'Telengana'):
-                    confirmedMOHFW = stateDict['positive']
-                    recoveredMOHFW = stateDict['cured']
-                    deathsMOHFW = stateDict['death']
+                    activeMOHFW = stateDict['new_active']
+                    recoveredMOHFW = stateDict['new_cured']
+                    deathsMOHFW = stateDict['new_death']
+                    confirmedMOHFW = stateDict['new_positive']
+                    break
+
+            stateCode = getStateCode(stateSITE)
             if confirmedMOHFW == 'UNAVBL':
-                confirmedMOHFW = 'UNAVBL'.ljust(chars, ' ')
-                confirmed_diff = 'UNAVBL'.ljust(chars, ' ')
-                active_diff = 'UNAVBL'.ljust(chars, ' ')
-                recovered_diff = 'UNAVBL'.ljust(chars, ' ')
-                deaths_diff = 'UNAVBL'.ljust(chars, ' ')
-                activeMOHFW = 'UNAVBL'.ljust(chars, ' ')
+                confirmedMOHFW = unavblCode
+                confirmed_diff = unavblCode
+                active_diff = unavblCode
+                recovered_diff = unavblCode
+                deaths_diff = unavblCode
+                activeMOHFW = unavblCode
             else:
                 if compare == True:
                     leadingPlus = '{0:+}'
                     confirmed_diff = int(confirmedMOHFW) - confirmedSITE
-                    active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                        int(deathsMOHFW) - activeSITE
+                    active_diff = int(activeMOHFW) - activeSITE
                     recovered_diff = int(recoveredMOHFW) - recoveredSITE
                     deaths_diff = int(deathsMOHFW) - deathsSITE
                 else:
                     leadingPlus = '{0}'
                     confirmed_diff = int(confirmedMOHFW)
-                    active_diff = int(confirmedMOHFW) - int(recoveredMOHFW) - \
-                        int(deathsMOHFW)
+                    active_diff = int(activeMOHFW)
                     recovered_diff = int(recoveredMOHFW)
                     deaths_diff = int(deathsMOHFW)
                 # String formatting
@@ -359,9 +362,9 @@ def mohfwapi(update, context, compare=False):
                     deaths_diff = ' 0'.ljust(chars, ' ')
 
             message = message + \
-                stateSITE[0:chars+2].ljust(chars+2, '.') + \
-                '|' + confirmed_diff + '|' + recovered_diff + \
-                '|' + deaths_diff + '\n'
+                stateCode.ljust(2, '.') + \
+                '|' + active_diff + '|' + recovered_diff + \
+                '|' + deaths_diff + '|' + confirmed_diff + '\n'
 
         message = '```' + message + '```'
 
