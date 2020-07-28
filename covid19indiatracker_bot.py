@@ -25,6 +25,7 @@ MOHFWLink = 'https://www.mohfw.gov.in'
 NDMALink = 'https://utility.arcgis.com/usrsvcs/servers/83b36886c90942ab9f67e7a212e515c8/rest/services/Corona/DailyCasesMoHUA/MapServer/0/query?f=json&where=1%3D1&returnGeometry=true&spatialRel=esriSpatialRelIntersects&maxAllowableOffset=9783&geometry=%7B%22xmin%22%3A5009377.085690986%2C%22ymin%22%3A0.000004991888999938965%2C%22xmax%22%3A10018754.171386965%2C%22ymax%22%3A5009377.08570097%2C%22spatialReference%22%3A%7B%22wkid%22%3A102100%7D%7D&geometryType=esriGeometryEnvelope&inSR=102100&outFields=*&outSR=102100&cacheHint=false'
 _stateNameCodeDict = {}
 unavblCode = 'UNAVBL'.ljust(6, ' ')
+zeroCode = ' 0'.ljust(6, ' ')
 
 
 def _getSiteData(statewise=False):
@@ -353,13 +354,13 @@ def mohfwapi(update, context, compare=False):
                 deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
                 # Check for +0 and change to _0
                 if confirmed_diff.strip() == '+0':
-                    confirmed_diff = ' 0'.ljust(chars, ' ')
+                    confirmed_diff = zeroCode
                 if active_diff.strip() == '+0':
-                    active_diff = ' 0'.ljust(chars, ' ')
+                    active_diff = zeroCode
                 if recovered_diff.strip() == '+0':
-                    recovered_diff = ' 0'.ljust(chars, ' ')
+                    recovered_diff = zeroCode
                 if deaths_diff.strip() == '+0':
-                    deaths_diff = ' 0'.ljust(chars, ' ')
+                    deaths_diff = zeroCode
 
             message = message + \
                 stateCode.ljust(2, '.') + \
@@ -458,13 +459,13 @@ def ndmaapi(update, context, compare=False):
                 deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
                 # Check for +0 and change to _0
                 if confirmed_diff.strip() == '+0':
-                    confirmed_diff = ' 0'.ljust(chars, ' ')
+                    confirmed_diff = zeroCode
                 if active_diff.strip() == '+0':
-                    active_diff = ' 0'.ljust(chars, ' ')
+                    active_diff = zeroCode
                 if recovered_diff.strip() == '+0':
-                    recovered_diff = ' 0'.ljust(chars, ' ')
+                    recovered_diff = zeroCode
                 if deaths_diff.strip() == '+0':
-                    deaths_diff = ' 0'.ljust(chars, ' ')
+                    deaths_diff = zeroCode
 
             message = message + \
                 stateSITE[0:chars+2].ljust(chars+2, '.') + \
@@ -570,13 +571,13 @@ def mohfwsite(update, context, compare=False):
                     deaths_diff = leadingPlus.format(deaths_diff).ljust(chars, ' ')
                 # Check for +0 and change to _0
                 if confirmed_diff.strip() == '+0':
-                    confirmed_diff = ' 0'.ljust(chars, ' ')
+                    confirmed_diff = zeroCode
                 if active_diff.strip() == '+0':
-                    active_diff = ' 0'.ljust(chars, ' ')
+                    active_diff = zeroCode
                 if recovered_diff.strip() == '+0':
-                    recovered_diff = ' 0'.ljust(chars, ' ')
+                    recovered_diff = zeroCode
                 if deaths_diff.strip() == '+0':
-                    deaths_diff = ' 0'.ljust(chars, ' ')
+                    deaths_diff = zeroCode
 
             message = message + \
                 stateCode.ljust(2, '.') + \
