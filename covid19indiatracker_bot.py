@@ -26,6 +26,7 @@ NDMALink = 'https://utility.arcgis.com/usrsvcs/servers/83b36886c90942ab9f67e7a21
 _stateNameCodeDict = {}
 unavblCode = 'UNAVBL'.ljust(6, ' ')
 zeroCode = ' 0'.ljust(6, ' ')
+mohfwDefaultSource = 'api'  # Use 'api' or 'site'
 
 
 def _getSiteData(statewise=False):
@@ -231,8 +232,8 @@ def advanced(update, context):
     logging.info('Command invoked: advanced')
 
     message = "/recon - for value checks in data fields.\n" + \
-              " Use the keyword 'api' after the commands /mohfw and\n" + \
-              "/comparemohfw for retrieving data directly " + \
+              " Use the keyword 'api' or 'site' after the commands" + \
+              " /mohfw and /comparemohfw for retrieving data directly" + \
               " from the MOHFW website rather than the API provided by MOHFW\n"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
@@ -489,7 +490,7 @@ def mohfwsite(update, context, compare=False):
     try:
         stateScraped, activeScraped, recoveredScraped, \
                 deathsScraped, confirmedScraped = _getMOHFWData(site=True)
-        message = '\nMOHFW Site Reports: ' \
+        message = '\nMOHFW Reports (Site): ' \
             + '\n\n' \
             + 'ST' + '|'\
             + 'ACTIV'.ljust(6, '.') + '|'\
@@ -595,23 +596,39 @@ def mohfwsite(update, context, compare=False):
 
 def mohfw(update, context):
     """ Displays data from MOHFW """
-    """ Data retrieved from SITE by default unless 'api' is specified """
+    """ Data retrieved using mohfwDefaultSource variable unless keyword is specified """
     logging.info('Command invoked: mohfw')
     if update.message.text.upper()  == '/MOHFW API':
         logging.info('api keyword provided')
         mohfwapi(update, context, compare=False)
-    else:
+    elif update.message.text.upper() == '/MOHFW SITE':
+        logging.info('site keyword provided')
         mohfwsite(update, context, compare=False)
+    else:
+        if mohfwDefaultSource == 'api':
+            logging.info('api source used by default')
+            mohfwapi(update, context, compare=False)
+        else:
+            logging.info('site source used by default')
+            mohfwsite(update, context, compare=False)
 
 def comparemohfw(update, context):
     """ Displays difference in data between MOHFW and covid19india.org """
-    """ Data retrieved from SITE by default unless 'api' is specified """
+    """ Data retrieved using mohfwDefaultSource variable unless keyword is specified """
     logging.info('Command invoked: comparemohfw')
     if update.message.text.upper()  == '/COMPAREMOHFW API':
         logging.info('api keyword provided')
         mohfwapi(update, context, compare=True)
-    else:
+    elif update.message.text.upper() == '/COMPAREMOHFW SITE':
+        logging.info('site keyword provided')
         mohfwsite(update, context, compare=True)
+    else:
+        if mohfwDefaultSource == 'api':
+            logging.info('api source used by default')
+            mohfwapi(update, context, compare=True)
+        else:
+            logging.info('site source used by default')
+            mohfwsite(update, context, compare=True)
 
 def ndma(update, context):
     """ Displays data from NDMA """
