@@ -233,7 +233,7 @@ def advanced(update, context):
     """ advanced command """
     logging.info('Command invoked: advanced')
 
-    message = "/requestsoption <enable/disable> - allow/dissallow requests\n" + \
+    message = "/request <enable/disable> - admin allow/dissallow requests\n" + \
               "/recon - for value checks in data fields.\n" + \
               " Use the keyword 'api' or 'site' after the commands" + \
               " /mohfw and /comparemohfw for retrieving data directly" + \
@@ -718,12 +718,18 @@ def isAdmin(update, context):
 
 def request(update, context):
     logging.info('Command invoked: request')
-    requestmsg = update.message.text.replace('/request','')
     message = 'Your request has been forwarded'
     global _allowRequests
 
     # Only allow requests from Covid Ops channel
     if update.message.chat.id ==  -1001263158724:
+        if isAdmin(update, context):
+            if update.message.text.upper() == '/REQUEST ENABLE':
+                _allowRequests = True
+                message = "Requests are now enabled"
+            if update.message.text.upper() == '/REQUEST DISABLE':
+                message = "Requests are now disabled"
+
         if _allowRequests:
             # Forward to requests channel
             context.bot.forward_message(chat_id='@covid19indiaorg_resource_req', \
@@ -740,6 +746,10 @@ def request(update, context):
                                      disable_notification=True, \
                                      reply_to_message_id=update.message.message_id
                                     )
+
+        if isAdmin(update, context):
+            if update.message.text.upper() == '/REQUEST DISABLE':
+                _allowRequests = False
 
 def requestsoption(update, context):
     logging.info('Command invoked: requestsoption')
@@ -781,8 +791,6 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('advanced', advanced))
 
     updater.dispatcher.add_handler(CommandHandler('request', request))
-    updater.dispatcher.add_handler(CommandHandler('requestsoption',
-                                                  requestsoption))
 
     updater.start_polling()
     updater.idle()
