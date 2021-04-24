@@ -17,6 +17,7 @@ logging.basicConfig(filename='covid19indiatracker_bot.log',
                     format='%(asctime)s - %(name)s - \
                     %(levelname)s - %(message)s',
                     level=logging.INFO)
+_allowRequests = True
 
 webPageLink = 'https://www.covid19india.org'
 districts_daiyLink = "https://api.covid19india.org/districts_daily.json"
@@ -223,6 +224,7 @@ def help(update, context):
               "/comparemohfw - Displays the diff. in cases reported by MOHFW database\n" + \
               "(-ve) means MOHFW reports lesser cases and\n(+ve) means MOHFW " + \
               " reports higher cases than covid19india.org\n" + \
+              "/request - Forward request to @covid19indiaorg_resource_req\n" + \
               "/advanced - Lists commands and options for advanced usage"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
@@ -231,7 +233,8 @@ def advanced(update, context):
     """ advanced command """
     logging.info('Command invoked: advanced')
 
-    message = "/recon - for value checks in data fields.\n" + \
+    message = "/requestsoption <enable/disable> - allow/dissallow requests\n" + \
+              "/recon - for value checks in data fields.\n" + \
               " Use the keyword 'api' or 'site' after the commands" + \
               " /mohfw and /comparemohfw for retrieving data directly" + \
               " from the MOHFW website rather than the API provided by MOHFW\n"
@@ -696,6 +699,66 @@ def recon(update, context):
                              parse_mode=ParseMode.MARKDOWN,
                              disable_web_page_preview=True)
 
+def isAdmin(update, context):
+    """ Check if user is admin """
+    status = context.bot.get_chat_member( \
+                                         chat_id=update.effective_chat.id, \
+                                         user_id=update.message.from_user.id)['status']
+    chatType = context.bot.get_chat( \
+                                    chat_id=update.effective_chat.id \
+                                    )['type']
+
+    logging.info('Command invoked by ' + status + ' from ' + chatType + ' chat')
+    if status.encode('ascii', 'ignore') == 'member':
+        if chatType.encode('ascii', 'ignore') == 'private':
+            return True
+        return False
+    else:
+        return True
+
+def request(update, context):
+    logging.info('Command invoked: request')
+    requestmsg = update.message.text.replace('/request','')
+    message = 'Your request has been forwarded'
+    global _allowRequests
+
+    # Only allow requests from Covid Ops channel
+    if update.message.chat.id ==  -1001263158724:
+        if _allowRequests:
+            # Forward to requests channel
+            context.bot.forward_message(chat_id='@covid19indiaorg_resource_req', \
+                                        from_chat_id=update.effective_chat.id, \
+                                        message_id=update.message.message_id, \
+                                        parse_mode=ParseMode.MARKDOWN, \
+                                        disable_web_page_preview=True)
+
+            # Reply to sender with acknowledgement
+            context.bot.send_message(chat_id=update.effective_chat.id, \
+                                     text=message, \
+                                     parse_mode=ParseMode.MARKDOWN, \
+                                     disable_web_page_preview=True, \
+                                     disable_notification=True, \
+                                     reply_to_message_id=update.message.message_id
+                                    )
+
+def requestsoption(update, context):
+    logging.info('Command invoked: requestsoption')
+    global _allowRequests
+
+    if isAdmin(update, context):
+        if update.message.text.upper() == '/REQUESTSOPTION ENABLE':
+            _allowRequests = True
+            message = "Requests are now enabled"
+        if update.message.text.upper() == '/REQUESTSOPTION DISABLE':
+            _allowRequests = False
+            message = "Requests are now disabled"
+
+        context.bot.send_message(chat_id=update.effective_chat.id, \
+                                 text=message, \
+                                 parse_mode=ParseMode.MARKDOWN, \
+                                 disable_web_page_preview=True)
+
+
 def main():
     logging.info('covid19india_bot started')
 
@@ -716,6 +779,10 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('recon', recon))
 
     updater.dispatcher.add_handler(CommandHandler('advanced', advanced))
+
+    updater.dispatcher.add_handler(CommandHandler('request', request))
+    updater.dispatcher.add_handler(CommandHandler('requestsoption',
+                                                  requestsoption))
 
     updater.start_polling()
     updater.idle()
