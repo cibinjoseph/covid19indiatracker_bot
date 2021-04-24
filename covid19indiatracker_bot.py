@@ -740,11 +740,18 @@ def request(update, context):
 
         if _allowRequests:
             # Forward to requests channel
-            context.bot.forward_message(chat_id='@covid19indiaorg_resource_req', \
-                                        from_chat_id=update.effective_chat.id, \
-                                        message_id=update.message.message_id, \
-                                        parse_mode=ParseMode.MARKDOWN, \
-                                        disable_web_page_preview=True)
+            if update.message.reply_to_message.text:
+                context.bot.forward_message(chat_id='@covid19indiaorg_resource_req', \
+                                            from_chat_id=update.effective_chat.id, \
+                                            message_id=update.message.reply_to_message.message_id, \
+                                            parse_mode=ParseMode.MARKDOWN, \
+                                            disable_web_page_preview=True)
+            else:
+                context.bot.forward_message(chat_id='@covid19indiaorg_resource_req', \
+                                            from_chat_id=update.effective_chat.id, \
+                                            message_id=update.message.message_id, \
+                                            parse_mode=ParseMode.MARKDOWN, \
+                                            disable_web_page_preview=True)
 
             # Reply to sender with acknowledgement
             if _allowRequestsReply:
