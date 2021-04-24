@@ -790,7 +790,8 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('advanced', advanced))
 
     updater.dispatcher.add_handler(CommandHandler('request', request))
-    updater.dispatcher.add_handler(MessageHandler(Filters.regex('#request'), \
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex('#request') | \
+                                                  Filters.regex('#resources'), \
                                                   request))
 
 
