@@ -7,6 +7,8 @@ import json
 import operator
 from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler
+from telegram.ext.messagehandler import MessageHandler
+from telegram.ext.filters import Filters
 import logging
 import urllib3
 from bs4 import BeautifulSoup
@@ -18,6 +20,7 @@ logging.basicConfig(filename='covid19indiatracker_bot.log',
                     %(levelname)s - %(message)s',
                     level=logging.INFO)
 _allowRequests = True
+_allowRequestsReply = False
 
 webPageLink = 'https://www.covid19india.org'
 districts_daiyLink = "https://api.covid19india.org/districts_daily.json"
@@ -720,10 +723,15 @@ def request(update, context):
     logging.info('Command invoked: request')
     message = 'Your request has been forwarded'
     global _allowRequests
+    global _allowRequestsReply
 
     # Only allow requests from Covid Ops channel
     if update.message.chat.id ==  -1001263158724:
         if isAdmin(update, context):
+            if update.message.text.upper() == '/REQUEST ENABLE REPLY':
+                _allowRequestsReply = True
+            if update.message.text.upper() == '/REQUEST DISABLE REPLY':
+                _allowRequestsReply = False
             if update.message.text.upper() == '/REQUEST ENABLE':
                 _allowRequests = True
                 message = "Requests are now enabled"
@@ -739,34 +747,18 @@ def request(update, context):
                                         disable_web_page_preview=True)
 
             # Reply to sender with acknowledgement
-            context.bot.send_message(chat_id=update.effective_chat.id, \
-                                     text=message, \
-                                     parse_mode=ParseMode.MARKDOWN, \
-                                     disable_web_page_preview=True, \
-                                     disable_notification=True, \
-                                     reply_to_message_id=update.message.message_id
-                                    )
+            if _allowRequestsReply:
+                context.bot.send_message(chat_id=update.effective_chat.id, \
+                                         text=message, \
+                                         parse_mode=ParseMode.MARKDOWN, \
+                                         disable_web_page_preview=True, \
+                                         disable_notification=True, \
+                                         reply_to_message_id=update.message.message_id
+                                        )
 
         if isAdmin(update, context):
             if update.message.text.upper() == '/REQUEST DISABLE':
                 _allowRequests = False
-
-def requestsoption(update, context):
-    logging.info('Command invoked: requestsoption')
-    global _allowRequests
-
-    if isAdmin(update, context):
-        if update.message.text.upper() == '/REQUESTSOPTION ENABLE':
-            _allowRequests = True
-            message = "Requests are now enabled"
-        if update.message.text.upper() == '/REQUESTSOPTION DISABLE':
-            _allowRequests = False
-            message = "Requests are now disabled"
-
-        context.bot.send_message(chat_id=update.effective_chat.id, \
-                                 text=message, \
-                                 parse_mode=ParseMode.MARKDOWN, \
-                                 disable_web_page_preview=True)
 
 
 def main():
@@ -791,6 +783,9 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('advanced', advanced))
 
     updater.dispatcher.add_handler(CommandHandler('request', request))
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex('#request'), \
+                                                  request))
+
 
     updater.start_polling()
     updater.idle()
