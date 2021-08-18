@@ -3,6 +3,7 @@ from sys import version_info
 # if version_info.major > 2:
 #     raise Exception('This code does not work with Python 3. Use Python 2')
 import requests
+import pandas as pd
 import json
 import operator
 from telegram import ParseMode
@@ -23,7 +24,6 @@ _allowRequests = True
 _allowRequestsReply = False
 
 webPageLink = 'https://www.covid19india.org'
-districts_daiyLink = "https://api.covid19india.org/districts_daily.json"
 MOHFWAPILink = "https://www.mohfw.gov.in/data/datanew.json"
 MOHFWLink = 'https://www.mohfw.gov.in'
 NDMALink = 'https://utility.arcgis.com/usrsvcs/servers/83b36886c90942ab9f67e7a212e515c8/rest/services/Corona/DailyCasesMoHUA/MapServer/0/query?f=json&where=1%3D1&returnGeometry=true&spatialRel=esriSpatialRelIntersects&maxAllowableOffset=9783&geometry=%7B%22xmin%22%3A5009377.085690986%2C%22ymin%22%3A0.000004991888999938965%2C%22xmax%22%3A10018754.171386965%2C%22ymax%22%3A5009377.08570097%2C%22spatialReference%22%3A%7B%22wkid%22%3A102100%7D%7D&geometryType=esriGeometryEnvelope&inSR=102100&outFields=*&outSR=102100&cacheHint=false'
@@ -36,11 +36,11 @@ mohfwDefaultSource = 'api'  # Use 'api' or 'site'
 def _getSiteData(statewise=False):
     """ Retrieves data from api link """
     if statewise == False:
-        link = 'https://api.covid19india.org/data.json'
+        link = 'https://api.covid19india.org/csv/latest/state_wise.csv'
     else:
-        link = 'https://api.covid19india.org/v2/state_district_wise.json'
+        link = 'https://api.covid19india.org/csv/latest/district_wise.csv'
     try:
-        data = requests.get(link).json()
+        data = pd.read_csv(link)
         logging.info('Stats retrieval: SUCCESS')
         return data
     except:
@@ -145,7 +145,7 @@ def _getSortedNational(data, keyBasis='active'):
 def _getMessageNational():
     """ Returns formatted data for printing """
     data = _getSiteData()
-    orderedData = _getSortedNational(data)
+    orderedData = data.sort_values(by=['Active'], ascending=False)
     chars = 5  # Character spacing per column
     message = '\n' \
     + webPageLink \
@@ -157,23 +157,26 @@ def _getMessageNational():
     + 'ACTI'.ljust(5, '.') + '\n'\
     + '------|-----|-----|-----|-----\n'
 
-    for state in orderedData:
-        stateName = state[0]
-        # Find rest of the values from dataset
-        for stateDict in data['statewise']:
-            if stateName == stateDict['state']:
-                if stateName.strip() != 'Total':
-                    stateName = stateName[0:6].ljust(6, ' ')
-                else:
-                    stateName = 'INDIA.'
-                code = stateDict["statecode"].ljust(chars, ' ')
-                active = stateDict["active"].ljust(chars, ' ')
-                confirmed = stateDict["confirmed"].ljust(chars, ' ')
-                deaths = stateDict["deaths"].ljust(chars, ' ')
-                recovered = stateDict["recovered"].ljust(chars, ' ')
-                # deltaconfirmed = state["deltaconfirmed"]
-                # deltadeaths    = state["deltadeaths"]
-                # deltarecovered = state["deltarecovered"]
+    # print(orderedData.columns)  # DEBUG
+    for index, state in orderedData.iterrows():
+        stateName = state["State"]
+        active = orderedData["Active"][index]
+        confirmed = orderedData["Confirmed"][index]
+        deaths = orderedData["Deaths"][index]
+        recovered = orderedData["Recovered"][index]
+
+        # Clean up and formatting
+        if stateName.strip() != "Total":
+            stateName = stateName[0:6].ljust(6, ' ')
+        else:
+            stateName = 'INDIA.'
+        active = str(active).ljust(chars, ' ')
+        confirmed = str(confirmed).ljust(chars, ' ')
+        deaths = str(deaths).ljust(chars, ' ')
+        recovered = str(recovered).ljust(chars, ' ')
+        # deltaconfirmed = state["deltaconfirmed"]
+        # deltadeaths    = state["deltadeaths"]
+        # deltarecovered = state["deltarecovered"]
         message = message + stateName + '|' \
             + confirmed + '|' + recovered + '|' \
             + deaths + '|' + active + '\n'
@@ -294,7 +297,7 @@ def mohfwapi(update, context, compare=False):
     logging.info('Command invoked: mohfwapi')
     # Check for arguments
     dataSITE_raw = _getSiteData()
-    dataSITE = _getSortedNational(dataSITE_raw, keyBasis='active')[1:]
+    dataSITE = dataSITE_raw.sort_values(by=['Active'], ascending=False)
     dataMOHFW = _getMOHFWData()
     message = '\nMOHFW Reports (API): ' \
         + '\n\n' \
@@ -307,26 +310,27 @@ def mohfwapi(update, context, compare=False):
     chars = 6
 
     try:
-        for state in dataSITE:
-            stateSITE = str(state[0])
-            activeSITE = state[1]
-            # Handle "State Unassigned"
-            if (stateSITE == 'State Unassigned'):
-                continue
-            # Obtain deaths and recovered for each state from site dataset
-            for stateDict in dataSITE_raw['statewise']:
-                if stateSITE == stateDict['state']:
-                    confirmedSITE = int(stateDict['confirmed'])
-                    deathsSITE = int(stateDict['deaths'])
-                    recoveredSITE = int(stateDict['recovered'])
+        for index, state in dataSITE.iterrows():
+            stateSITE = state['State']
+            activeSITE = dataSITE['Active'][index]
+            confirmedSITE = dataSITE['Confirmed'][index]
+            deathsSITE = dataSITE['Deaths'][index]
+            recoveredSITE = dataSITE['Recovered'][index]
 
             confirmedMOHFW = 'UNAVBL'
             for stateDict in dataMOHFW:
                 stateMOHFW = str(stateDict['state_name'])
                 # Check for matching state name in MOHFW database
                 # 1. Handle Telangana misspelling
+                # 2. Handle Total
                 if stateMOHFW == stateSITE or \
                    (stateSITE == 'Telangana' and stateMOHFW == 'Telengana'):
+                    activeMOHFW = stateDict['new_active']
+                    recoveredMOHFW = stateDict['new_cured']
+                    deathsMOHFW = stateDict['new_death']
+                    confirmedMOHFW = stateDict['new_positive']
+                    break
+                if stateSITE == 'Total' and stateDict['sno'] == '11111':
                     activeMOHFW = stateDict['new_active']
                     recoveredMOHFW = stateDict['new_cured']
                     deathsMOHFW = stateDict['new_death']
